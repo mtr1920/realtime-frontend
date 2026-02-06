@@ -60,7 +60,7 @@ export function MediaInitializer({
 
   // WebRTC hook - pass mediaReady so it waits for media capture before initializing
   // This ensures the local stream is available when WebRTC negotiation begins
-  const { isInitialized: webrtcInitialized } = useWebRTC({ mediaReady });
+  useWebRTC({ mediaReady });
 
   // Determine what to initialize based on config, permissions, AND user preferences
   // Only request permissions for media the user has enabled
@@ -142,24 +142,26 @@ export function MediaInitializer({
             }
           } else {
             logger.warn('[MediaInitializer] Permissions denied');
+            setMediaReady(true);
             onError?.(new Error('Media permissions denied'));
           }
         } catch (err) {
           logger.error('[MediaInitializer] Media initialization failed', err);
           if (mountedRef.current) {
+            setMediaReady(true);
             onError?.(err as Error);
           }
         }
       })();
     });
 
-    // Cleanup on unmount
-    // Note: Do NOT call stopCapture() here. The stream should persist across
-    // component re-renders and navigations within the session. Stream cleanup
-    // should only happen when explicitly leaving the session (via session store reset).
-    return () => {
-      mountedRef.current = false;
-    };
+    // NOTE: No cleanup function here. mountedRef is managed by the dedicated
+    // mount-tracking effect below (lines ~200-205). Previously, this cleanup
+    // set mountedRef.current = false, which caused a race condition: when
+    // startCapture() updates the media store, the startCapture callback gets
+    // a new reference (localStream dep changes), triggering this effect's
+    // cleanup before the async IIFE completes — falsely marking the component
+    // as unmounted and preventing setMediaReady(true) from ever executing.
   }, [
     localParticipantId,
     localParticipant,
@@ -176,15 +178,15 @@ export function MediaInitializer({
     send,
   ]);
 
-  // Call onReady only after BOTH media is ready AND WebRTC is initialized
-  // This ensures the stream is synced to WebRTC before session.ready is sent
+  // Call onReady when media is ready (session.ready is independent of WebRTC init)
+  // WebRTC initializes independently via useWebRTC hook above
   useEffect(() => {
-    if (mediaReady && webrtcInitialized && !hasCalledOnReadyRef.current) {
+    if (mediaReady && !hasCalledOnReadyRef.current) {
       hasCalledOnReadyRef.current = true;
-      logger.info('[MediaInitializer] Media and WebRTC ready');
+      logger.info('[MediaInitializer] Media ready, signaling session.ready');
       onReady?.();
     }
-  }, [mediaReady, webrtcInitialized, onReady]);
+  }, [mediaReady, onReady]);
 
   // Forward media errors
   useEffect(() => {

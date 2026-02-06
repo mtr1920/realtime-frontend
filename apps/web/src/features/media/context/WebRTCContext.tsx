@@ -21,6 +21,7 @@ import {
   type WebRTCService,
 } from '../services/webrtc.service';
 import { useWebRTCStore } from '../stores/webrtc.store';
+import { logger } from '@/shared/lib/logger';
 import type { PeerConnectionEvent, WebRTCConfig } from '../types/webrtc.types';
 
 // =============================================================================
@@ -111,7 +112,11 @@ export function WebRTCProvider({ children, config }: WebRTCProviderProps) {
         isObserver,
       });
 
-      service.start();
+      try {
+        service.start();
+      } catch (err) {
+        logger.warn('[WebRTCContext] service.start() failed, will retry on reconnect', err);
+      }
       serviceRef.current = service;
       storeInitialize(localParticipantId);
     },

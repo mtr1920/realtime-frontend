@@ -3,7 +3,19 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
+
+// Mock useTransition so startTransition calls the callback synchronously
+// This is necessary because React 19 async transitions don't fully
+// flush in jsdom test environments
+vi.mock('react', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return {
+    ...actual,
+    useTransition: () => [false, (cb: () => void) => cb()],
+  };
+});
+
 import { MediaInitializer } from '@/features/sessions/components/room/MediaInitializer';
 
 // Mock hooks
@@ -11,6 +23,10 @@ vi.mock('@/features/media', () => ({
   useLocalMedia: vi.fn(),
   useMediaDevices: vi.fn(),
   useWebRTC: vi.fn(),
+}));
+
+vi.mock('@/features/realtime', () => ({
+  useSend: vi.fn(),
 }));
 
 vi.mock('@/shared/stores/session.store', () => ({
@@ -38,6 +54,7 @@ vi.mock('@/shared/lib/logger', () => ({
 }));
 
 import { useLocalMedia, useMediaDevices, useWebRTC } from '@/features/media';
+import { useSend } from '@/features/realtime';
 import { useSessionStore } from '@/shared/stores/session.store';
 import { useMediaStore } from '@/shared/stores/media.store';
 import { useSessionPermissions } from '@/features/sessions/hooks/useSessionPermissions';
@@ -46,10 +63,19 @@ import { useSessionConfig } from '@/features/sessions/hooks/useSessionConfig';
 const mockUseLocalMedia = vi.mocked(useLocalMedia);
 const mockUseMediaDevices = vi.mocked(useMediaDevices);
 const mockUseWebRTC = vi.mocked(useWebRTC);
+const mockUseSend = vi.mocked(useSend);
 const mockUseSessionStore = vi.mocked(useSessionStore);
 const mockUseMediaStore = vi.mocked(useMediaStore);
 const mockUseSessionPermissions = vi.mocked(useSessionPermissions);
 const mockUseSessionConfig = vi.mocked(useSessionConfig);
+
+/** Flush all pending microtasks and React updates */
+async function flushAsync() {
+  await act(async () => {
+    // Allow all microtasks (chained awaits in startTransition) to complete
+    await vi.waitFor(() => {}, { timeout: 100 });
+  });
+}
 
 describe('MediaInitializer', () => {
   const mockStartCapture = vi.fn();
@@ -58,6 +84,8 @@ describe('MediaInitializer', () => {
   const localParticipant = { id: 'participant-1' };
 
   beforeEach(() => {
+    mockUseSend.mockReturnValue(vi.fn().mockResolvedValue(undefined));
+
     mockUseLocalMedia.mockReturnValue({
       startCapture: mockStartCapture,
       stopCapture: mockStopCapture,
@@ -111,14 +139,16 @@ describe('MediaInitializer', () => {
       const state = {
         localParticipantId: 'participant-1',
         getLocalParticipant: () => localParticipant,
+        updateParticipantMedia: vi.fn(),
       };
       return selector(state as never);
     });
 
+    const mediaState = { isAudioEnabled: true, isVideoEnabled: true };
     mockUseMediaStore.mockImplementation((selector) => {
-      const state = { isAudioEnabled: true, isVideoEnabled: true };
-      return selector(state as never);
+      return selector(mediaState as never);
     });
+    (mockUseMediaStore as unknown as { getState: () => unknown }).getState = () => mediaState;
 
     mockUseSessionPermissions.mockReturnValue({
       canPublishAudio: true,
@@ -166,7 +196,6 @@ describe('MediaInitializer', () => {
       enabledModules: ['video', 'audio'],
       isObserver: false,
       config: null,
-      // Extended properties (roleConfig)
       roleConfig: null,
       flow: undefined,
       stageOrder: [],
@@ -211,9 +240,9 @@ describe('MediaInitializer', () => {
       </MediaInitializer>
     );
 
-    await waitFor(() => {
-      expect(mockRequestPermissions).toHaveBeenCalledWith(true, true);
-    });
+    await flushAsync();
+
+    expect(mockRequestPermissions).toHaveBeenCalledWith(true, true);
   });
 
   it('should start capture after permissions granted', async () => {
@@ -223,11 +252,11 @@ describe('MediaInitializer', () => {
       </MediaInitializer>
     );
 
-    await waitFor(() => {
-      expect(mockStartCapture).toHaveBeenCalledWith({
-        audio: true,
-        video: true,
-      });
+    await flushAsync();
+
+    expect(mockStartCapture).toHaveBeenCalledWith({
+      audio: true,
+      video: true,
     });
   });
 
@@ -240,9 +269,9 @@ describe('MediaInitializer', () => {
       </MediaInitializer>
     );
 
-    await waitFor(() => {
-      expect(onReady).toHaveBeenCalled();
-    });
+    await flushAsync();
+
+    expect(onReady).toHaveBeenCalled();
   });
 
   it('should call onError when permissions denied', async () => {
@@ -255,13 +284,13 @@ describe('MediaInitializer', () => {
       </MediaInitializer>
     );
 
-    await waitFor(() => {
-      expect(onError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Media permissions denied',
-        })
-      );
-    });
+    await flushAsync();
+
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Media permissions denied',
+      })
+    );
   });
 
   it('should call onError when capture fails', async () => {
@@ -274,13 +303,13 @@ describe('MediaInitializer', () => {
       </MediaInitializer>
     );
 
-    await waitFor(() => {
-      expect(onError).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Capture failed',
-        })
-      );
-    });
+    await flushAsync();
+
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Capture failed',
+      })
+    );
   });
 
   it('should not initialize when no participant', () => {
@@ -327,9 +356,9 @@ describe('MediaInitializer', () => {
       </MediaInitializer>
     );
 
-    await waitFor(() => {
-      expect(mockRequestPermissions).toHaveBeenCalledWith(true, true);
-    });
+    await flushAsync();
+
+    expect(mockRequestPermissions).toHaveBeenCalledWith(true, true);
   });
 
   it('should not initialize when canPublishMedia is false', () => {
@@ -350,7 +379,6 @@ describe('MediaInitializer', () => {
       enabledModules: [],
       isObserver: false,
       config: null,
-      // Extended properties (roleConfig)
       roleConfig: null,
       flow: undefined,
       stageOrder: [],
@@ -397,7 +425,6 @@ describe('MediaInitializer', () => {
       enabledModules: ['audio'],
       isObserver: false,
       config: null,
-      // Extended properties (roleConfig)
       roleConfig: null,
       flow: undefined,
       stageOrder: [],
@@ -423,15 +450,15 @@ describe('MediaInitializer', () => {
       </MediaInitializer>
     );
 
-    await waitFor(() => {
-      expect(mockStartCapture).toHaveBeenCalledWith({
-        audio: true,
-        video: false,
-      });
+    await flushAsync();
+
+    expect(mockStartCapture).toHaveBeenCalledWith({
+      audio: true,
+      video: false,
     });
   });
 
-  it('should stop capture on unmount', () => {
+  it('should not stop capture on unmount (stream persists for session lifetime)', () => {
     const { unmount } = render(
       <MediaInitializer>
         <div>Child</div>
@@ -440,6 +467,8 @@ describe('MediaInitializer', () => {
 
     unmount();
 
-    expect(mockStopCapture).toHaveBeenCalled();
+    // Component deliberately does NOT call stopCapture on unmount.
+    // Stream cleanup only happens when explicitly leaving the session.
+    expect(mockStopCapture).not.toHaveBeenCalled();
   });
 });

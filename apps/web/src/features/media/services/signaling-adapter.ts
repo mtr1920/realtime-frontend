@@ -14,6 +14,7 @@ import type {
   RTCMediaKind,
 } from '@/features/realtime/types/messages';
 import { getWebSocketService } from '@/features/realtime/services/websocket.service';
+import { logger } from '@/shared/lib/logger';
 
 // =============================================================================
 // Types
@@ -45,7 +46,8 @@ export class SignalingAdapter {
   subscribe(): void {
     const ws = getWebSocketService();
     if (!ws) {
-      throw new Error('SignalingAdapter: WebSocket service not available');
+      logger.warn('[SignalingAdapter] WebSocket service not available yet, skipping subscribe');
+      return;
     }
 
     // Subscribe to RTC messages
