@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="interviewer-bg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="60" fill="url(#interviewer-bg)"/>
+  <rect x="54" y="32" width="20" height="44" rx="10" fill="#ffffff" opacity="0.95"/>
+  <rect x="46" y="74" width="36" height="10" rx="5" fill="#ffffff" opacity="0.95"/>
+  <rect x="58" y="86" width="12" height="16" rx="6" fill="#ffffff" opacity="0.95"/>
+</svg>

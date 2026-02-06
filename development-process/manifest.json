@@ -1,0 +1,117 @@
+{
+  "original_source": "/home/mtr/Projects/RealtimeApp/realtime-frontend/DevelopmentProcess",
+  "new_location": "/home/mtr/Projects/RealtimeApp/realtime-frontend/development-process",
+  "created_at": "2026-01-16",
+  "mappings": {
+    "tracker": {
+      "source": "DevelopmentProcess/frontend/FRONTEND_DEVELOPMENT_TRACKER.md",
+      "outputs": [
+        {
+          "file": "tracker/tasks.md",
+          "description": "Main task tracking (Phase 1-8)"
+        },
+        {
+          "file": "tracker/changelog.md",
+          "description": "Change history"
+        },
+        {
+          "file": "tracker/adrs.md",
+          "description": "Architecture Decision Records"
+        },
+        {
+          "file": "tracker/notes.md",
+          "description": "Notes & Blockers"
+        },
+        {
+          "file": "tracker/validation.md",
+          "description": "Cross-Cutting Validation Gates"
+        },
+        {
+          "file": "tracker/reference.md",
+          "description": "Quick Reference, Tech Stack, Key Files"
+        },
+        {
+          "file": "tracker/metrics.md",
+          "description": "Quality Metrics Dashboard"
+        }
+      ]
+    },
+    "split_sections": {
+      "source": "DevelopmentProcess/frontend/Frontend-Development-Plan.md",
+      "outputs": [
+        {
+          "file": "00-executive-summary.md",
+          "title": "Frontend Development Plan - Executive Summary"
+        },
+        {
+          "file": "01-decision-log.md",
+          "title": "1. Decision Log"
+        },
+        {
+          "file": "02-project-structure.md",
+          "title": "2. Project Structure"
+        },
+        {
+          "file": "03-theme-management-system.md",
+          "title": "3. Theme Management System"
+        },
+        {
+          "file": "04-glassmorphism-and-modern-effects.md",
+          "title": "4. Glassmorphism & Modern Effects"
+        },
+        {
+          "file": "05-state-management-architecture.md",
+          "title": "5. State Management Architecture"
+        },
+        {
+          "file": "06-component-architecture.md",
+          "title": "6. Component Architecture"
+        },
+        {
+          "file": "07-real-time-communication.md",
+          "title": "7. Real-Time Communication"
+        },
+        {
+          "file": "08-webrtc-integration.md",
+          "title": "8. WebRTC Integration"
+        },
+        {
+          "file": "09-ai-interaction-layer.md",
+          "title": "9. AI Interaction Layer"
+        },
+        {
+          "file": "10-authentication-and-authorization.md",
+          "title": "10. Authentication & Authorization"
+        },
+        {
+          "file": "11-domain-configuration-rendering.md",
+          "title": "11. Domain Configuration Rendering"
+        },
+        {
+          "file": "12-design-system.md",
+          "title": "12. Design System"
+        },
+        {
+          "file": "13-testing-strategy.md",
+          "title": "13. Testing Strategy"
+        },
+        {
+          "file": "14-performance-optimization.md",
+          "title": "14. Performance Optimization"
+        },
+        {
+          "file": "15-development-phases.md",
+          "title": "15. Development Phases"
+        },
+        {
+          "file": "appendix-a-technology-stack.md",
+          "title": "Appendix A: Technology Stack"
+        },
+        {
+          "file": "appendix-b-environment-variables.md",
+          "title": "Appendix B: Environment Variables"
+        }
+      ]
+    }
+  }
+}

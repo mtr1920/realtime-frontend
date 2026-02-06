@@ -1,0 +1,47 @@
+{
+  "name": "realtime-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:web": "pnpm --filter @realtime/web dev",
+    "stop:web": "lsof -ti:3000 | xargs -r kill",
+    "build:web": "pnpm --filter @realtime/web build",
+    "build:ui": "pnpm --filter @realtime/ui build",
+    "preview:web": "pnpm --filter @realtime/web preview",
+    "test:web": "pnpm --filter @realtime/web test",
+    "test:web:coverage": "pnpm --filter @realtime/web test:coverage",
+    "test:web:e2e": "pnpm --filter @realtime/web test:e2e",
+    "test:web:visual": "pnpm --filter @realtime/web test:visual",
+    "test:web:a11y": "pnpm --filter @realtime/web test:a11y",
+    "lint:web": "pnpm --filter @realtime/web lint",
+    "typecheck:web": "pnpm --filter @realtime/web typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "clean": "pnpm -r exec rm -rf node_modules dist .turbo",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@vitest/coverage-v8": "^2.1.9",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.4.2",
+    "prettier-plugin-tailwindcss": "^0.6.9",
+    "typescript": "^5.7.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,css,md}": [
+      "prettier --write"
+    ]
+  },
+  "packageManager": "pnpm@9.15.2",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

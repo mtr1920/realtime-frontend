@@ -1,0 +1,628 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand: Xumane Recruit - Professional blue with subtle purple undertones */
+    --background: 220 20% 98%;
+    --foreground: 222.2 47% 11.2%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47% 11.2%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47% 11.2%;
+    /* Primary: Vivid blue with slight purple undertone */
+    --primary: 225 84% 57%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 225 84% 96%;
+    --accent-foreground: 225 84% 47%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 152 69% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 20 60% 15%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 225 84% 57%;
+    --radius: 0.75rem;
+
+    /* Dashboard-specific tokens */
+    --icon-bg: 225 84% 96%;
+    --icon-bg-hover: 225 84% 92%;
+    --gradient-primary: linear-gradient(135deg, hsl(225 84% 57%) 0%, hsl(250 84% 60%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(220 20% 99%) 0%, hsl(220 20% 97%) 100%);
+  }
+
+  .dark {
+    /* Blackish with subtle sky blue tint (hue ~200) */
+    --background: 200 10% 4%;
+    --foreground: 200 20% 98%;
+    --card: 200 8% 8%;
+    --card-foreground: 200 20% 98%;
+    --popover: 200 10% 6%;
+    --popover-foreground: 200 20% 98%;
+    --primary: 199 89% 55%;
+    --primary-foreground: 200 10% 4%;
+    --secondary: 200 8% 14%;
+    --secondary-foreground: 200 20% 98%;
+    --muted: 200 8% 14%;
+    --muted-foreground: 200 10% 65%;
+    --accent: 200 12% 16%;
+    --accent-foreground: 200 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 200 20% 98%;
+    --success: 142.1 70.6% 45.3%;
+    --success-foreground: 144.9 80.4% 10%;
+    --warning: 48 96% 53%;
+    --warning-foreground: 20 70% 15%;
+    --info: 199 89% 48%;
+    --info-foreground: 201 96% 32%;
+    --border: 200 8% 18%;
+    --input: 200 8% 14%;
+    --ring: 199 89% 55%;
+  }
+
+  .high-contrast {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 48 100% 50%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 80%;
+    --accent: 48 100% 50%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 100% 60%;
+    --destructive-foreground: 0 0% 0%;
+    --success: 120 100% 50%;
+    --success-foreground: 0 0% 0%;
+    --warning: 60 100% 50%;
+    --warning-foreground: 0 0% 0%;
+    --info: 200 100% 50%;
+    --info-foreground: 0 0% 0%;
+    --border: 0 0% 100%;
+    --input: 0 0% 20%;
+    --ring: 48 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  /* Global card shadow - subtle elevation for all cards */
+  .card-shadow {
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03); /* elevationTokens.subtle */
+  }
+
+  /* Focus visible styles for keyboard navigation */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* Remove focus ring from command palette input */
+  [cmdk-input-wrapper] input:focus-visible,
+  [cmdk-root] input:focus-visible {
+    @apply ring-0 ring-offset-0 outline-none;
+  }
+
+  /* Hide browser clear buttons and autocomplete controls */
+  input::-webkit-search-cancel-button,
+  input::-webkit-search-decoration,
+  input::-webkit-search-results-button,
+  input::-webkit-search-results-decoration,
+  input::-ms-clear,
+  input::-ms-reveal {
+    display: none;
+    -webkit-appearance: none;
+  }
+
+  /* Reduced motion support */
+  .reduce-motion *,
+  .reduce-motion *::before,
+  .reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Glassmorphism utilities */
+@layer utilities {
+  .glass {
+    @apply bg-white/80 backdrop-blur-md;
+  }
+
+  .dark .glass {
+    @apply bg-card/80;
+  }
+
+  .glass-subtle {
+    @apply bg-white/50 backdrop-blur-sm;
+  }
+
+  .dark .glass-subtle {
+    @apply bg-card/50;
+  }
+
+  .glass-strong {
+    @apply bg-white/95 backdrop-blur-xl;
+  }
+
+  .dark .glass-strong {
+    @apply bg-card/95;
+  }
+
+  /* Card variant with border and subtle shadow (matches dashboard-card) */
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03); /* elevationTokens.subtle */
+  }
+
+  .dark .glass-card {
+    @apply bg-card/80 border-border/30;
+  }
+
+  .high-contrast .glass-card {
+    @apply bg-black border-white border-2 backdrop-blur-none;
+  }
+
+  /* Modal variant - stronger effect */
+  .glass-modal {
+    @apply bg-white/90 backdrop-blur-xl border border-white/30 shadow-2xl;
+  }
+
+  .dark .glass-modal {
+    @apply bg-card/90 border-border/40;
+  }
+
+  .high-contrast .glass-modal {
+    @apply bg-black border-white border-2 backdrop-blur-none;
+  }
+
+  /* Fallback for browsers without backdrop-filter support */
+  @supports not (backdrop-filter: blur(1px)) {
+    .glass,
+    .glass-subtle,
+    .glass-strong,
+    .glass-card,
+    .glass-modal {
+      @apply bg-white/95;
+    }
+
+    .dark .glass,
+    .dark .glass-subtle,
+    .dark .glass-strong,
+    .dark .glass-card,
+    .dark .glass-modal {
+      @apply bg-card/95;
+    }
+  }
+
+  /* GPU-accelerated animation utilities */
+  .animate-gpu {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+
+  .animate-gpu-complete {
+    will-change: auto;
+  }
+
+  /* Elevated glass card with hover lift (matches dashboard-card-interactive) */
+  .glass-card-elevated {
+    @apply glass-card card-hover-accent hover:-translate-y-0.5 transition-all duration-200;
+  }
+
+  .glass-card-elevated:hover {
+    box-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.06); /* elevationTokens.raised */
+  }
+
+  /* Press effect for buttons */
+  .press-effect {
+    @apply active:scale-95 transition-transform duration-75;
+  }
+
+  /* Shimmer skeleton background */
+  .shimmer-bg {
+    @apply bg-gradient-to-r from-muted via-muted-foreground/10 to-muted;
+    background-size: 200% 100%;
+  }
+
+  /* Floating toolbar style */
+  .floating-toolbar {
+    @apply fixed bottom-6 left-1/2 -translate-x-1/2 glass-card rounded-full px-4 py-2 shadow-2xl;
+  }
+
+  /* Gradient text effect */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
+  }
+
+  /* Status pulse variants */
+  .status-pulse-active {
+    @apply relative;
+  }
+
+  .status-pulse-active::before {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-green-500/20;
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Quality bar heights */
+  .quality-bar {
+    @apply rounded-sm transition-colors duration-200;
+  }
+
+  /* Video tile overlay gradient */
+  .video-overlay-gradient {
+    @apply bg-gradient-to-t from-black/70 via-black/20 to-transparent;
+  }
+
+  /* Speaking indicator ring */
+  .speaking-ring {
+    @apply ring-2 ring-green-500/70;
+  }
+
+  /* Hover reveal container */
+  .hover-reveal-container .hover-reveal {
+    @apply opacity-0 transition-opacity duration-200;
+  }
+
+  .hover-reveal-container:hover .hover-reveal,
+  .hover-reveal-container:focus-within .hover-reveal {
+    @apply opacity-100;
+  }
+
+  /* Staggered animation delays for cards */
+  .stagger-1 { animation-delay: 0ms; }
+  .stagger-2 { animation-delay: 50ms; }
+  .stagger-3 { animation-delay: 100ms; }
+  .stagger-4 { animation-delay: 150ms; }
+  .stagger-5 { animation-delay: 200ms; }
+  .stagger-6 { animation-delay: 250ms; }
+
+  /* =========================================================================
+   * Crystalline Card Design System
+   * Unified aesthetic for all entity cards (sessions, workspaces, admin)
+   * Primary implementation: Card variant="crystalline" in @realtime/ui
+   * ========================================================================= */
+
+  /* Base crystalline card - use on Card component */
+  .crystalline-card {
+    @apply relative overflow-hidden;
+    @apply border border-border/60;
+    @apply bg-gradient-to-br from-card via-card to-card/95;
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .dark .crystalline-card {
+    @apply from-card via-card/95 to-card/90;
+  }
+
+  .crystalline-card:hover {
+    @apply -translate-y-1 border-border shadow-lg;
+  }
+
+  /* Status stripe - left edge indicator */
+  .crystalline-stripe {
+    @apply absolute top-0 left-0 w-1 h-full rounded-l-xl;
+    @apply transition-all duration-300;
+  }
+
+  .crystalline-card:hover .crystalline-stripe {
+    @apply w-1.5;
+  }
+
+  /* Diagonal geometric accent - top-left corner */
+  .crystalline-accent {
+    @apply absolute -top-px -left-px w-24 h-24;
+    @apply opacity-[0.08] dark:opacity-[0.12];
+    @apply transition-opacity duration-300;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+  }
+
+  .crystalline-card:hover .crystalline-accent {
+    @apply opacity-[0.12] dark:opacity-[0.18];
+  }
+
+  /* Corner accent - bottom-right subtle triangle */
+  .crystalline-corner {
+    @apply absolute bottom-0 right-0 w-12 h-12;
+    @apply bg-gradient-to-tl from-muted/30 to-transparent;
+    @apply pointer-events-none;
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+  }
+
+  /* Content wrapper with left padding for stripe */
+  .crystalline-content {
+    @apply relative p-6 pl-7;
+  }
+
+  /* Taller cards for better proportions on wide screens */
+  .crystalline-card-tall {
+    @apply min-h-[180px];
+  }
+
+  @media (min-width: 1280px) {
+    .crystalline-card-tall {
+      @apply min-h-[200px];
+    }
+  }
+
+  /* Actions that reveal on hover */
+  .crystalline-card .crystalline-hover-action {
+    @apply opacity-0 transition-all duration-200;
+  }
+
+  .crystalline-card:hover .crystalline-hover-action,
+  .crystalline-card:focus-within .crystalline-hover-action {
+    @apply opacity-100;
+  }
+
+  /* Link with arrow reveal */
+  .crystalline-link {
+    @apply inline-flex items-center gap-2 transition-colors duration-200;
+  }
+
+  .crystalline-link-arrow {
+    @apply h-4 w-4 text-muted-foreground/50;
+    @apply transition-all duration-200;
+    @apply opacity-0 -translate-x-1;
+  }
+
+  .crystalline-link:hover .crystalline-link-arrow {
+    @apply opacity-100 translate-x-0 text-primary;
+  }
+
+  /* Monospace ID tag styling */
+  .crystalline-tag {
+    @apply font-mono text-sm font-medium;
+    @apply text-muted-foreground;
+    @apply px-1.5 py-0.5 rounded;
+    @apply bg-muted/50 dark:bg-muted/30;
+    @apply transition-colors duration-200;
+  }
+
+  .crystalline-link:hover .crystalline-tag {
+    @apply bg-primary/10 text-primary;
+  }
+
+  /* Icon container with accent background */
+  .crystalline-icon {
+    @apply flex items-center justify-center;
+    @apply rounded-xl;
+    @apply bg-accent dark:bg-primary/15;
+    @apply transition-colors duration-200;
+  }
+
+  .crystalline-card:hover .crystalline-icon {
+    @apply bg-accent/80 dark:bg-primary/25;
+  }
+
+  /* Metadata row styling */
+  .crystalline-meta {
+    @apply flex items-center gap-2 text-sm text-muted-foreground;
+  }
+
+  .crystalline-meta-icon {
+    @apply h-3.5 w-3.5 shrink-0;
+  }
+
+  /* Gradient presets for status stripes */
+  .gradient-primary { @apply bg-gradient-to-b from-primary to-primary/80; }
+  .gradient-success { @apply bg-gradient-to-b from-emerald-400 to-teal-500; }
+  .gradient-warning { @apply bg-gradient-to-b from-amber-400 to-orange-500; }
+  .gradient-info { @apply bg-gradient-to-b from-sky-400 to-blue-500; }
+  .gradient-muted { @apply bg-gradient-to-b from-zinc-400 to-zinc-500; }
+  .gradient-destructive { @apply bg-gradient-to-b from-red-400 to-rose-600; }
+
+  /* Geometric pattern overlay for cards */
+  .card-geometric-pattern {
+    background-image:
+      linear-gradient(135deg, transparent 25%, hsl(var(--primary) / 0.02) 25%, hsl(var(--primary) / 0.02) 50%, transparent 50%, transparent 75%, hsl(var(--primary) / 0.02) 75%);
+    background-size: 20px 20px;
+  }
+
+  .dark .card-geometric-pattern {
+    background-image:
+      linear-gradient(135deg, transparent 25%, hsl(var(--primary) / 0.03) 25%, hsl(var(--primary) / 0.03) 50%, transparent 50%, transparent 75%, hsl(var(--primary) / 0.03) 75%);
+  }
+
+  /* Noise texture overlay */
+  .card-noise-texture::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none opacity-[0.015];
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  .dark .card-noise-texture::before {
+    @apply opacity-[0.03];
+  }
+
+  /* =========================================================================
+   * Card Interaction Utilities
+   * Hover lift and enhanced shadow for interactive cards
+   * ========================================================================= */
+
+  /* Interactive card - adds hover lift and enhanced shadow */
+  .card-interactive {
+    @apply card-hover-accent transition-all duration-200 ease-out;
+  }
+
+  .card-interactive:hover {
+    @apply -translate-y-0.5;
+    box-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.06); /* elevationTokens.raised */
+  }
+
+  .card-interactive:focus-within {
+    @apply -translate-y-0.5 ring-2 ring-ring ring-offset-2 ring-offset-background;
+    box-shadow: 0 2px 8px -2px rgb(0 0 0 / 0.06); /* elevationTokens.raised */
+  }
+
+  /* =========================================================================
+   * Futuristic Card Hover Effect - Colored Top Border Accent
+   * ========================================================================= */
+
+  .card-hover-accent {
+    @apply relative overflow-hidden;
+  }
+
+  .card-hover-accent::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-0.5 opacity-0;
+    @apply bg-gradient-to-r from-primary via-primary/80 to-primary;
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .card-hover-accent:hover::before,
+  .card-hover-accent:focus-within::before {
+    @apply h-1 opacity-100;
+  }
+
+  /* Dark mode variant - slightly brighter gradient */
+  .dark .card-hover-accent::before {
+    @apply from-primary/90 via-primary to-primary/90;
+  }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .card-hover-accent::before {
+      @apply transition-none;
+    }
+  }
+
+  /* =========================================================================
+   * Status Glow Classes
+   * Use for status-based colored shadow effects
+   * Maps to statusGlowTokens from packages/ui/themes/tokens.ts
+   * ========================================================================= */
+
+  .status-glow-success {
+    box-shadow: 0 0 12px -3px rgb(34 197 94 / 0.3);
+  }
+
+  .status-glow-info {
+    box-shadow: 0 0 12px -3px rgb(59 130 246 / 0.3);
+  }
+
+  .status-glow-warning {
+    box-shadow: 0 0 12px -3px rgb(245 158 11 / 0.3);
+  }
+
+  .status-glow-error {
+    box-shadow: 0 0 12px -3px rgb(239 68 68 / 0.3);
+  }
+
+  .status-glow-primary {
+    box-shadow: 0 0 12px -3px hsl(var(--primary) / 0.3);
+  }
+
+  /* Stats icon container - accent background with hover transition */
+  .stats-icon-container {
+    @apply flex items-center justify-center w-10 h-10 rounded-xl transition-colors duration-200;
+    background-color: hsl(var(--icon-bg));
+  }
+
+  .stats-icon-container:hover,
+  .group:hover .stats-icon-container {
+    background-color: hsl(var(--icon-bg-hover));
+  }
+
+  .dark .stats-icon-container {
+    @apply bg-primary/15;
+  }
+
+  .dark .stats-icon-container:hover,
+  .dark .group:hover .stats-icon-container {
+    @apply bg-primary/25;
+  }
+
+  /* Quick action icon container - subtle hover */
+  .quick-action-icon {
+    @apply flex items-center justify-center w-10 h-10 rounded-xl transition-colors duration-200;
+    background-color: hsl(var(--icon-bg));
+  }
+
+  .group:hover .quick-action-icon {
+    background-color: hsl(var(--icon-bg-hover));
+  }
+
+  .dark .quick-action-icon {
+    @apply bg-primary/15;
+  }
+
+  .dark .group:hover .quick-action-icon {
+    @apply bg-primary/25;
+  }
+
+  /* Activity row hover */
+  .activity-row {
+    @apply flex items-start gap-3 p-2 -mx-2 rounded-lg transition-colors duration-150;
+  }
+
+  .activity-row:hover {
+    @apply bg-muted/50;
+  }
+
+  /* Respect reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .dashboard-card-interactive {
+      @apply transition-none;
+    }
+
+    .dashboard-card-interactive:hover {
+      @apply translate-y-0;
+    }
+
+    .animate-slide-up-fade {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+}
+
+/* Screen reader only utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.sr-only.focus\:not-sr-only:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  padding: inherit;
+  margin: inherit;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
