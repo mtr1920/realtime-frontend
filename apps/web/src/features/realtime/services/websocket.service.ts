@@ -116,6 +116,16 @@ export class WebSocketService {
   // Connection promise for deduplication
   private connectPromise: Promise<void> | null = null;
 
+  /**
+   * Signal intentional tab close to the backend via custom close code.
+   * Arrow function to preserve `this` binding for addEventListener/removeEventListener.
+   */
+  private handleBeforeUnload = (): void => {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      this.socket.close(WS_CLOSE_CODES.TAB_CLOSE, 'tab_close');
+    }
+  };
+
   constructor(config: WebSocketConfig) {
     this.config = { ...DEFAULT_CONFIG, ...config };
     this.messageQueue = new MessageQueue();
@@ -472,6 +482,7 @@ export class WebSocketService {
     this.setConnectionState('connected');
     this.reconnectManager.resetAttempts();
     this.heartbeat.start();
+    window.addEventListener('beforeunload', this.handleBeforeUnload);
 
     // Check if we should resume instead of just replaying messages
     if (this.hasJoinedSession && this.lastServerSeq > 0) {
@@ -658,6 +669,7 @@ export class WebSocketService {
     this.heartbeat.stop();
     this.auth.cleanup();
     this.reconnectManager.cancelReconnect();
+    window.removeEventListener('beforeunload', this.handleBeforeUnload);
 
     // Reject all pending messages
     this.pendingMessages.forEach(({ reject, timeout }) => {

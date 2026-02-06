@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useMediaStore } from '@/shared/stores/media.store';
-import { useWebRTCContext } from '../context/WebRTCContext';
+import { useOptionalWebRTCContext } from '../context/WebRTCContext';
 import { mediaCaptureService, stopStreamTracksWithCleanup } from '../services/media-capture.service';
 import type { MediaError, ScreenShareOptions } from '../types/media.types';
 
@@ -39,9 +39,10 @@ export function useScreenShare(): UseScreenShareReturn {
   const setScreenShareStream = useMediaStore((s) => s.setScreenShareStream);
   const setScreenShareEnabled = useMediaStore((s) => s.setScreenShareEnabled);
 
-  // WebRTC context
-  const { setScreenShareStream: setWebRTCScreenShare, isInitialized } =
-    useWebRTCContext();
+  // WebRTC context - tolerant of provider not being ready yet (race during join flow)
+  const webrtc = useOptionalWebRTCContext();
+  const setWebRTCScreenShare = webrtc?.setScreenShareStream;
+  const isInitialized = webrtc?.isInitialized ?? false;
 
   // Error state
   const errorRef = useRef<MediaError | null>(null);
@@ -57,7 +58,7 @@ export function useScreenShare(): UseScreenShareReturn {
 
     // Sync with WebRTC service
     if (isInitialized) {
-      setWebRTCScreenShare(null);
+      setWebRTCScreenShare?.(null);
     }
 
     errorRef.current = null;
@@ -92,7 +93,7 @@ export function useScreenShare(): UseScreenShareReturn {
 
         // Sync with WebRTC service
         if (isInitialized) {
-          setWebRTCScreenShare(result.stream);
+          setWebRTCScreenShare?.(result.stream);
         }
 
         // Listen for browser-initiated stop (user clicks "Stop sharing" in browser UI)

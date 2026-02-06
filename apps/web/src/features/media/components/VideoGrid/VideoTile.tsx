@@ -10,7 +10,7 @@
  */
 
 import { useRef, useEffect, forwardRef, memo, useState } from 'react';
-import { Mic, MicOff, MonitorUp } from 'lucide-react';
+import { Loader2, Mic, MicOff, MonitorUp } from 'lucide-react';
 import { Badge } from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
 import { VideoPlaceholder } from './VideoPlaceholder';
@@ -43,6 +43,8 @@ interface VideoTileProps {
   audioLevel?: number;
   /** Connection quality */
   quality?: NetworkQualityLevel;
+  /** Participant connection state (for reconnecting overlay) */
+  connectionState?: 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
   /** Additional class name */
   className?: string;
   /** Whether to mirror the video (for local view) */
@@ -106,6 +108,7 @@ export const VideoTile = memo(
         isSpeaking = false,
         audioLevel = 0,
         quality = 'unknown',
+        connectionState,
         className,
         mirrored = false,
         highlighted = false,
@@ -210,6 +213,19 @@ export const VideoTile = memo(
               displayName={displayName}
               initials={initials}
             />
+          )}
+
+          {/* Reconnecting overlay */}
+          {connectionState === 'reconnecting' && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+              <Loader2
+                className="h-8 w-8 text-white motion-safe:animate-spin"
+                aria-hidden="true"
+              />
+              <span className="mt-2 text-sm font-medium text-white/90">
+                Reconnecting...
+              </span>
+            </div>
           )}
 
           {/* Audio level indicator */}

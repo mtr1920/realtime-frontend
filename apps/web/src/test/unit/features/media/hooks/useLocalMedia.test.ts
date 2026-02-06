@@ -258,8 +258,9 @@ describe('useLocalMedia', () => {
         result.current.stopCapture();
       });
 
-      expect(result.current.isAudioEnabled).toBe(false);
-      expect(result.current.isVideoEnabled).toBe(false);
+      // Enabled states are preserved (user preference) — stopCapture only clears streams
+      expect(result.current.isAudioEnabled).toBe(true);
+      expect(result.current.isVideoEnabled).toBe(true);
     });
   });
 

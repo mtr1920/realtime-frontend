@@ -33,6 +33,7 @@ export const WS_CLOSE_CODES = {
   SESSION_EXPIRED: 4010,
   RATE_LIMITED: 4029,
   AI_PROVIDER_ERROR: 4502,
+  TAB_CLOSE: 4100,
 } as const;
 
 export type WsCloseCode = (typeof WS_CLOSE_CODES)[keyof typeof WS_CLOSE_CODES];
@@ -64,6 +65,7 @@ export const CLOSE_CODE_MESSAGES: Record<number, string> = {
   [WS_CLOSE_CODES.SESSION_EXPIRED]: 'Session expired or disconnected',
   [WS_CLOSE_CODES.RATE_LIMITED]: 'Rate limit exceeded',
   [WS_CLOSE_CODES.AI_PROVIDER_ERROR]: 'AI provider unavailable',
+  [WS_CLOSE_CODES.TAB_CLOSE]: 'Tab closed',
 };
 
 // =============================================================================
@@ -81,6 +83,7 @@ export const NO_RECONNECT_CODES = new Set<number>([
   WS_CLOSE_CODES.NOT_FOUND, // Session/participant doesn't exist
   WS_CLOSE_CODES.INVALID_STATE, // Wrong session status
   WS_CLOSE_CODES.SESSION_EXPIRED, // Session ended or participant disconnected
+  WS_CLOSE_CODES.TAB_CLOSE, // Tab closed - intentional disconnect
 ]);
 
 /**

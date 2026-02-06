@@ -8,6 +8,8 @@
  * - Connection state monitoring
  */
 
+import { logger } from '@/shared/lib/logger';
+
 import type {
   PeerConnectionState,
   ICEConnectionState,
@@ -16,6 +18,8 @@ import type {
   WebRTCConfig,
 } from '../types/webrtc.types';
 import { DEFAULT_WEBRTC_CONFIG } from '../types/webrtc.types';
+
+const STALE_OFFER_TIMEOUT_MS = 8_000;
 
 // =============================================================================
 // Types
@@ -47,9 +51,13 @@ export class PeerConnection {
   private isPolite: boolean;
   private makingOffer = false;
   private ignoreOffer = false;
+  // Tracks when the last local offer was created, used for stale offer detection.
+  // The `> 0` guard in isStaleOffer prevents treating the initial state (0) as stale.
+  private lastOfferCreatedAt = 0;
   private senders: Map<string, RTCRtpSender> = new Map();
   private remoteStreams: Map<string, MediaStream> = new Map();
   private callbacks: PeerConnectionCallbacks;
+  private config: WebRTCConfig;
 
   /**
    * ICE candidate buffering for candidates that arrive before remote description.
@@ -67,12 +75,11 @@ export class PeerConnection {
     this.participantId = options.participantId;
     this.isPolite = options.isPolite;
     this.callbacks = options.callbacks;
-
-    const config = options.config ?? DEFAULT_WEBRTC_CONFIG;
+    this.config = options.config ?? DEFAULT_WEBRTC_CONFIG;
 
     this.pc = new RTCPeerConnection({
-      iceServers: config.iceServers,
-      iceCandidatePoolSize: config.iceCandidatePoolSize,
+      iceServers: this.config.iceServers,
+      iceCandidatePoolSize: this.config.iceCandidatePoolSize,
     });
 
     this.setupEventHandlers();
@@ -142,6 +149,7 @@ export class PeerConnection {
   async createOffer(): Promise<RTCSessionDescriptionInit> {
     this.makingOffer = true;
     try {
+      this.lastOfferCreatedAt = Date.now();
       const offer = await this.pc.createOffer();
       await this.pc.setLocalDescription(offer);
       return this.pc.localDescription!;
@@ -159,15 +167,33 @@ export class PeerConnection {
       this.makingOffer ||
       this.pc.signalingState !== 'stable';
 
-    this.ignoreOffer = !this.isPolite && offerCollision;
+    // Detect stale local offer: impolite peer has a pending offer that's been
+    // unanswered for too long, indicating the remote never received it
+    const isStaleOffer = offerCollision &&
+      !this.makingOffer &&
+      this.lastOfferCreatedAt > 0 &&
+      Date.now() - this.lastOfferCreatedAt > STALE_OFFER_TIMEOUT_MS;
+
+    this.ignoreOffer = !this.isPolite && offerCollision && !isStaleOffer;
 
     if (this.ignoreOffer) {
       return null;
     }
 
+    // Explicit rollback for Safari <15.4 compatibility
+    if (isStaleOffer && this.pc.signalingState === 'have-local-offer') {
+      logger.warn('Stale offer detected, rolling back local offer to accept remote', {
+        remoteParticipantId: this.participantId,
+        offerAgeMs: Date.now() - this.lastOfferCreatedAt,
+        signalingState: this.pc.signalingState,
+      });
+      await this.pc.setLocalDescription({ type: 'rollback' });
+      this.lastOfferCreatedAt = 0;
+    }
+
     await this.pc.setRemoteDescription(offer);
     this.hasRemoteDescription = true;
-    this.ignoreOffer = false; // Reset after successful handling
+    this.ignoreOffer = false;
 
     // Flush any buffered ICE candidates now that remote description is set
     await this.flushPendingIceCandidates();
@@ -183,6 +209,7 @@ export class PeerConnection {
   async handleAnswer(answer: RTCSessionDescriptionInit): Promise<void> {
     await this.pc.setRemoteDescription(answer);
     this.hasRemoteDescription = true;
+    this.lastOfferCreatedAt = 0;
     this.ignoreOffer = false; // Reset after successful handling
 
     // Flush any buffered ICE candidates now that remote description is set
@@ -257,6 +284,7 @@ export class PeerConnection {
     this.remoteStreams.clear();
     this.pendingIceCandidates = [];
     this.hasRemoteDescription = false;
+    this.lastOfferCreatedAt = 0;
   }
 
   // ===========================================================================
@@ -288,6 +316,42 @@ export class PeerConnection {
   // ===========================================================================
   // Private Methods
   // ===========================================================================
+
+  /**
+   * Recreate the underlying RTCPeerConnection after it enters failed/closed state.
+   * The caller must re-add local tracks after calling this method.
+   */
+  recreateConnection(): void {
+    // Clean up old connection
+    this.pc.onconnectionstatechange = null;
+    this.pc.oniceconnectionstatechange = null;
+    this.pc.onicecandidate = null;
+    this.pc.onnegotiationneeded = null;
+    this.pc.ontrack = null;
+    this.pc.close();
+
+    // Reset negotiation state
+    this.senders.clear();
+    this.remoteStreams.clear();
+    this.pendingIceCandidates = [];
+    this.hasRemoteDescription = false;
+    this.makingOffer = false;
+    this.ignoreOffer = false;
+    this.lastOfferCreatedAt = 0;
+
+    for (const track of this.trackedTracks) {
+      track.onended = null;
+    }
+    this.trackedTracks.clear();
+
+    // Create fresh connection with same config
+    this.pc = new RTCPeerConnection({
+      iceServers: this.config.iceServers,
+      iceCandidatePoolSize: this.config.iceCandidatePoolSize,
+    });
+
+    this.setupEventHandlers();
+  }
 
   private setupEventHandlers(): void {
     // Connection state

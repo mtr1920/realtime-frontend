@@ -41,11 +41,15 @@ const mockWebRTCContext = {
   disconnectFromParticipant: vi.fn(),
 };
 
+// Mutable ref so tests can override the return value (e.g., null for missing context)
+let optionalWebRTCContextOverride: typeof mockWebRTCContext | null = mockWebRTCContext;
+
 vi.mock('@/features/media/context/WebRTCContext', () => ({
   useWebRTCContext: () => mockWebRTCContext,
+  useOptionalWebRTCContext: () => optionalWebRTCContextOverride,
 }));
 
-import { mediaCaptureService } from '@/features/media/services/media-capture.service';
+import { mediaCaptureService, stopStreamTracksWithCleanup } from '@/features/media/services/media-capture.service';
 
 // =============================================================================
 // Test Setup
@@ -58,9 +62,19 @@ describe('useScreenShare', () => {
     useMediaStore.getState().reset();
     vi.clearAllMocks();
 
+    // Re-apply stopStreamTracksWithCleanup implementation (vi.resetAllMocks clears it)
+    vi.mocked(stopStreamTracksWithCleanup).mockImplementation((stream: MediaStream | null) => {
+      if (!stream) return;
+      stream.getTracks().forEach((track) => {
+        track.onended = null;
+        track.stop();
+      });
+    });
+
     // Reset mock context
     mockWebRTCContext.isInitialized = false;
     mockWebRTCContext.setScreenShareStream.mockClear();
+    optionalWebRTCContextOverride = mockWebRTCContext;
   });
 
   afterEach(() => {
@@ -305,6 +319,44 @@ describe('useScreenShare', () => {
       await waitFor(() => {
         expect(result.current.isScreenSharing).toBe(false);
       });
+    });
+  });
+
+  // ===========================================================================
+  // Cleanup on Unmount
+  // ===========================================================================
+
+  // ===========================================================================
+  // WebRTC Context Not Available
+  // ===========================================================================
+
+  describe('when WebRTC context is not available', () => {
+    it('should not throw and return default state', () => {
+      optionalWebRTCContextOverride = null;
+
+      const { result } = renderHook(() => useScreenShare());
+
+      expect(result.current.isScreenSharing).toBe(false);
+      expect(result.current.screenShareStream).toBeNull();
+      expect(result.current.error).toBeNull();
+    });
+
+    it('should allow starting screen share without WebRTC sync', async () => {
+      optionalWebRTCContextOverride = null;
+
+      const mockResult = createMockScreenShareResult();
+      vi.mocked(mediaCaptureService.captureScreen).mockResolvedValueOnce(mockResult);
+
+      const { result } = renderHook(() => useScreenShare());
+
+      await act(async () => {
+        await result.current.startScreenShare();
+      });
+
+      expect(result.current.isScreenSharing).toBe(true);
+      expect(result.current.screenShareStream).toBe(mockResult.stream);
+      // Should not have called WebRTC setScreenShareStream since context is null
+      expect(mockWebRTCContext.setScreenShareStream).not.toHaveBeenCalled();
     });
   });
 

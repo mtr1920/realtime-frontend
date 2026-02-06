@@ -41,6 +41,7 @@ function buildVideoParticipant(
     isVideoEnabled,
     isSpeaking,
     quality,
+    connectionState: participant.connectionState,
   };
 }
 

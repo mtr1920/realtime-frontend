@@ -187,7 +187,11 @@ export function useSessionSubscriptions({
   });
 
   useSubscription('session.participant.left', (payload) => {
+    const participant = useSessionStore.getState().participants.get(payload.participantId);
     removeParticipant(payload.participantId);
+    if (participant) {
+      toast.info(`${participant.displayName} left`);
+    }
   });
 
   useSubscription('session.participant.updated', (payload) => {

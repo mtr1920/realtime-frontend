@@ -27,6 +27,8 @@ export interface VideoParticipant {
   isSpeaking?: boolean;
   audioLevel?: number;
   quality?: NetworkQualityLevel;
+  /** Participant connection state for reconnecting overlay */
+  connectionState?: 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 }
 
 interface VideoGridProps {

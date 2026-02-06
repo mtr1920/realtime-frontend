@@ -371,15 +371,16 @@ describe('useMediaStore', () => {
       expect(videoTrack.stop).toHaveBeenCalled();
       expect(screenTrack.stop).toHaveBeenCalled();
 
-      // Verify state was cleared
+      // Verify stream refs were cleared
       const state = useMediaStore.getState();
       expect(state.localStream).toBeNull();
       expect(state.localAudioTrack).toBeNull();
       expect(state.localVideoTrack).toBeNull();
       expect(state.screenShareStream).toBeNull();
-      expect(state.isAudioEnabled).toBe(false);
-      expect(state.isVideoEnabled).toBe(false);
-      expect(state.isScreenShareEnabled).toBe(false);
+      // Enabled states are intentionally preserved (user preference, not stream state)
+      expect(state.isAudioEnabled).toBe(true);
+      expect(state.isVideoEnabled).toBe(true);
+      expect(state.isScreenShareEnabled).toBe(true);
     });
 
     it('should handle stopAllTracks with no streams', () => {

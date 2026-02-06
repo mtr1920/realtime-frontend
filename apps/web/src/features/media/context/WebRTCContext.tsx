@@ -229,3 +229,14 @@ export function useWebRTCContext(): WebRTCContextValue {
   }
   return context;
 }
+
+/**
+ * Optional variant of useWebRTCContext that returns null instead of throwing.
+ * Use this in hooks that can gracefully degrade when WebRTC is not available yet
+ * (e.g., useScreenShare — screen sharing is a no-op until WebRTC initializes).
+ * For components that REQUIRE the provider (e.g., video grid), use useWebRTCContext.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export function useOptionalWebRTCContext(): WebRTCContextValue | null {
+  return useContext(WebRTCContext);
+}

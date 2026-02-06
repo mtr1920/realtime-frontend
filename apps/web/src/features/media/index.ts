@@ -36,7 +36,7 @@ export {
 export { useWebRTCStore } from './stores/webrtc.store';
 
 // Context
-export { WebRTCProvider, useWebRTCContext } from './context/WebRTCContext';
+export { WebRTCProvider, useWebRTCContext, useOptionalWebRTCContext } from './context/WebRTCContext';
 
 // Hooks
 export { useMediaDevices } from './hooks/useMediaDevices';

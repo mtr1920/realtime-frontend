@@ -50,6 +50,11 @@ export class WebRTCService {
   private isObserver: boolean;
   /** Track peers that have had local tracks added to prevent duplicate additions */
   private peersWithTracksAdded: Set<string> = new Set();
+  /** Suppresses negotiationneeded handling during remote offer processing.
+   * This is a service-level flag (not per-peer) which briefly suppresses all peers.
+   * In an N>2 scenario, a concurrent negotiationneeded from a different peer would
+   * be deferred — the browser will re-fire it after the flag clears. */
+  private processingRemoteOffer = false;
 
   constructor(options: WebRTCServiceOptions) {
     this.localParticipantId = options.localParticipantId;
@@ -423,19 +428,40 @@ export class WebRTCService {
   ): Promise<void> {
     let peer = this.peers.get(fromParticipantId);
 
-    if (!peer) {
-      // Create new peer for incoming connection
-      peer = this.createPeerConnection(fromParticipantId);
-
-      // Add local tracks only if NOT an observer
-      // Observers receive media but don't send
-      if (!this.isObserver) {
-        this.addLocalTracksToPeer(peer, fromParticipantId);
-      }
-    }
-
+    // Suppress negotiationneeded during remote offer processing to prevent
+    // competing offers from addTrack/recreateConnection racing with handleOffer.
+    this.processingRemoteOffer = true;
     try {
-      // Observers still respond to offers to receive media
+      // If existing peer's connection is failed/closed (e.g., after resume from network loss),
+      // recreate the connection and re-add local tracks for a clean restart.
+      if (peer) {
+        const state = peer.connectionState;
+        if (state === 'failed' || state === 'closed') {
+          logger.warn('Recreating failed/closed PeerConnection for incoming offer', {
+            remoteParticipantId: fromParticipantId,
+            connectionState: state,
+          });
+          peer.recreateConnection();
+          this.peersWithTracksAdded.delete(fromParticipantId);
+          if (!this.isObserver) {
+            this.addLocalTracksToPeer(peer, fromParticipantId);
+          }
+        }
+      }
+
+      if (!peer) {
+        // Create new peer for incoming connection
+        peer = this.createPeerConnection(fromParticipantId);
+
+        // Add local tracks only if NOT an observer
+        // Observers receive media but don't send
+        if (!this.isObserver) {
+          this.addLocalTracksToPeer(peer, fromParticipantId);
+        }
+      }
+
+      // Process the incoming offer — the single negotiation for this exchange.
+      // Observers still respond to offers to receive media.
       const answer = await peer.handleOffer({ type: 'offer', sdp });
       if (answer) {
         await this.signalingAdapter.sendAnswer(
@@ -446,6 +472,8 @@ export class WebRTCService {
       }
     } catch (error) {
       this.onEvent?.({ type: 'failed', participantId: fromParticipantId, error: `Failed to handle offer: ${error}` });
+    } finally {
+      this.processingRemoteOffer = false;
     }
   }
 
@@ -533,6 +561,8 @@ export class WebRTCService {
   private handleNegotiationNeeded(participantId: string): void {
     // Observers don't send media, so they won't trigger renegotiation
     if (this.isObserver) return;
+    // Suppress during remote offer processing to prevent competing offers
+    if (this.processingRemoteOffer) return;
 
     // For renegotiation between two non-observers, use ID ordering to determine
     // who creates the offer. Lower ID = impolite peer = creates offers.

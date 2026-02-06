@@ -9,7 +9,7 @@ import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from '@tanstack/react-router';
 import { useAuthHydrated } from '@/shared/stores/auth.store';
 import { WebSocketProvider } from '@/features/realtime';
-import { WebRTCProvider } from '@/features/media';
+import { WebRTCProvider, type WebRTCConfig } from '@/features/media';
 import { useSessionStore } from '@/shared/stores/session.store';
 import { SessionRoomContent } from '@/features/sessions/components/room/SessionRoomContent';
 import { SessionLoadingSkeleton } from '@/features/sessions';
@@ -25,6 +25,13 @@ export function SessionRoomPage() {
   const realtimeToken = useSessionStore((state) => state.realtimeToken);
   const wsEndpoint = useSessionStore((state) => state.wsEndpoint);
   const displayName = useSessionStore((state) => state.displayName);
+  const iceServers = useSessionStore((state) => state.iceServers);
+
+  // Build WebRTC config with TURN servers from backend (falls back to default STUN)
+  const webrtcConfig = useMemo<WebRTCConfig | undefined>(() => {
+    if (!iceServers?.length) return undefined;
+    return { iceServers };
+  }, [iceServers]);
 
   // Determine access - memoized to avoid recalculating on every render
   const hasSessionCredentials = useMemo(
@@ -59,7 +66,7 @@ export function SessionRoomPage() {
 
   return (
     <WebSocketProvider>
-      <WebRTCProvider>
+      <WebRTCProvider config={webrtcConfig}>
         <SessionRoomContent />
       </WebRTCProvider>
     </WebSocketProvider>

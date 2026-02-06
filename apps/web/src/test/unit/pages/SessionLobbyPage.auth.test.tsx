@@ -182,6 +182,7 @@ vi.mock('@/shared/stores/media.store', () => ({
     isVideoEnabled: false,
     setAudioEnabled: vi.fn(),
     setVideoEnabled: vi.fn(),
+    reset: vi.fn(),
   }),
 }));
 
