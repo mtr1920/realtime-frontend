@@ -294,21 +294,181 @@ describe('PeerConnection', () => {
   });
 
   // ===========================================================================
-  // ICE Restart
+  // ICE Restart with Backoff
   // ===========================================================================
 
   describe('restartIce', () => {
-    it('should create offer with ICE restart', async () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should create offer with ICE restart after backoff delay', async () => {
       const peer = new PeerConnection({
         participantId: 'participant-001',
         isPolite: true,
         callbacks,
       });
 
-      const offer = await peer.restartIce();
+      const offerPromise = peer.restartIce();
+      // First attempt delay: 2^0 * 2000 = 2000ms
+      await vi.advanceTimersByTimeAsync(2000);
+      const offer = await offerPromise;
 
-      expect(offer.type).toBe('offer');
-      expect(offer.sdp).toContain('restart');
+      expect(offer).not.toBeNull();
+      expect(offer!.type).toBe('offer');
+      expect(offer!.sdp).toContain('restart');
+    });
+
+    it('should use exponential backoff delays', async () => {
+      const peer = new PeerConnection({
+        participantId: 'participant-001',
+        isPolite: true,
+        callbacks,
+      });
+
+      // First attempt: 2^0 * 2000 = 2000ms
+      const p1 = peer.restartIce();
+      await vi.advanceTimersByTimeAsync(2000);
+      const o1 = await p1;
+      expect(o1).not.toBeNull();
+
+      // Second attempt: 2^1 * 2000 = 4000ms
+      const p2 = peer.restartIce();
+      await vi.advanceTimersByTimeAsync(4000);
+      const o2 = await p2;
+      expect(o2).not.toBeNull();
+
+      // Third attempt: 2^2 * 2000 = 8000ms
+      const p3 = peer.restartIce();
+      await vi.advanceTimersByTimeAsync(8000);
+      const o3 = await p3;
+      expect(o3).not.toBeNull();
+    });
+
+    it('should cap delay at 16000ms', async () => {
+      const peer = new PeerConnection({
+        participantId: 'participant-001',
+        isPolite: true,
+        callbacks,
+      });
+
+      // Advance through first 4 attempts to get to max delay
+      for (let i = 0; i < 4; i++) {
+        const p = peer.restartIce();
+        const delay = Math.min(Math.pow(2, i) * 2000, 16000);
+        await vi.advanceTimersByTimeAsync(delay);
+        await p;
+      }
+
+      // Fifth attempt: 2^4 * 2000 = 32000 → capped to 16000ms
+      const p5 = peer.restartIce();
+      await vi.advanceTimersByTimeAsync(16000);
+      const o5 = await p5;
+      expect(o5).not.toBeNull();
+    });
+
+    it('should return null and call onConnectionFailed after max attempts', async () => {
+      const onConnectionFailed = vi.fn();
+      const peer = new PeerConnection({
+        participantId: 'participant-001',
+        isPolite: true,
+        callbacks: { ...callbacks, onConnectionFailed },
+      });
+
+      // Exhaust all 5 attempts
+      for (let i = 0; i < 5; i++) {
+        const p = peer.restartIce();
+        const delay = Math.min(Math.pow(2, i) * 2000, 16000);
+        await vi.advanceTimersByTimeAsync(delay);
+        await p;
+      }
+
+      // Sixth attempt should fail immediately
+      const result = await peer.restartIce();
+      expect(result).toBeNull();
+      expect(onConnectionFailed).toHaveBeenCalledWith('participant-001');
+    });
+
+    it('should reset attempts on successful connection', async () => {
+      const peer = new PeerConnection({
+        participantId: 'participant-001',
+        isPolite: true,
+        callbacks,
+      });
+
+      // Use 3 attempts
+      for (let i = 0; i < 3; i++) {
+        const p = peer.restartIce();
+        const delay = Math.min(Math.pow(2, i) * 2000, 16000);
+        await vi.advanceTimersByTimeAsync(delay);
+        await p;
+      }
+
+      // Simulate successful connection → resets counter
+      const mockPc = (peer as unknown as { pc: MockRTCPeerConnection }).pc;
+      mockPc.simulateConnectionStateChange('connected');
+
+      // Should start from attempt 0 again (2000ms delay)
+      const p = peer.restartIce();
+      await vi.advanceTimersByTimeAsync(2000);
+      const offer = await p;
+      expect(offer).not.toBeNull();
+    });
+
+    it('should reject pending promise on close', async () => {
+      const peer = new PeerConnection({
+        participantId: 'participant-001',
+        isPolite: true,
+        callbacks,
+      });
+
+      // Start a restart (timer is pending)
+      const restartPromise = peer.restartIce();
+
+      // Close before timer fires — should reject the pending promise
+      peer.close();
+
+      // The promise should reject with PeerConnection closed error
+      await expect(restartPromise).rejects.toThrow('PeerConnection closed');
+
+      // Advance past the delay — timer was cleared, callback should NOT fire
+      await vi.advanceTimersByTimeAsync(2000);
+    });
+
+    it('should resolve superseded promise with null when called concurrently', async () => {
+      const peer = new PeerConnection({
+        participantId: 'participant-001',
+        isPolite: true,
+        callbacks,
+      });
+
+      // Start first restart (2000ms delay for attempt 0)
+      const p1 = peer.restartIce();
+
+      // Immediately call again before timer fires — should cancel old timer
+      // and resolve p1 with null (superseded)
+      // Second call uses attempt 1 (4000ms delay)
+      const p2 = peer.restartIce();
+
+      // p1 should have already resolved with null (superseded)
+      const o1 = await p1;
+      expect(o1).toBeNull();
+
+      // Advance to p2's timer (4000ms)
+      await vi.advanceTimersByTimeAsync(4000);
+      const o2 = await p2;
+      expect(o2).not.toBeNull();
+      expect(o2!.type).toBe('offer');
+
+      // Verify consistent state: 2 attempts consumed, next uses attempt 2 (8000ms)
+      const p3 = peer.restartIce();
+      await vi.advanceTimersByTimeAsync(8000);
+      const o3 = await p3;
+      expect(o3).not.toBeNull();
     });
   });
 

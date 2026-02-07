@@ -17,6 +17,7 @@ import {
   Bot,
   type LucideIcon,
 } from 'lucide-react';
+import { useSessionStore } from '@/shared/stores/session.store';
 import { useSessionConfig } from './useSessionConfig';
 
 /** Default color for roles not in the mapping */
@@ -272,10 +273,11 @@ function getDefaultAvatarColors(roleId: string): { bg: string; fg: string } {
  */
 export function useRoleConfig(): UseRoleConfigResult {
   const { config } = useSessionConfig();
+  const roleConfig = useSessionStore((s) => s.roleConfig);
 
   // Build role lookup map from config
   const roleMap = useMemo(() => {
-    const map = new Map<string, { id: string; name: string; color?: string }>();
+    const map = new Map<string, { id: string; name: string; color?: string; icon?: string }>();
 
     if (config?.roles) {
       for (const role of config.roles) {
@@ -287,8 +289,19 @@ export function useRoleConfig(): UseRoleConfigResult {
       }
     }
 
+    // For role-centric configs, always add the current role's name and meta
+    if (roleConfig?.roleId) {
+      const existing = map.get(roleConfig.roleId);
+      map.set(roleConfig.roleId, {
+        id: roleConfig.roleId,
+        name: existing?.name ?? roleConfig.roleName,
+        color: roleConfig.meta?.color ?? existing?.color,
+        icon: roleConfig.meta?.icon ?? existing?.icon,
+      });
+    }
+
     return map;
-  }, [config?.roles]);
+  }, [config?.roles, roleConfig?.roleId, roleConfig?.roleName, roleConfig?.meta]);
 
   const roles = useMemo(() => Array.from(roleMap.values()), [roleMap]);
 
@@ -323,9 +336,15 @@ export function useRoleConfig(): UseRoleConfigResult {
 
   const getRoleIcon = useCallback(
     (roleId: string): LucideIcon | null => {
+      // Check if config provides an icon name that matches a known icon
+      const role = roleMap.get(roleId);
+      if (role?.icon && role.icon in DEFAULT_ROLE_ICONS) {
+        return DEFAULT_ROLE_ICONS[role.icon] ?? null;
+      }
+      // Fallback: use pattern-based default icon
       return getDefaultRoleIcon(roleId);
     },
-    []
+    [roleMap]
   );
 
   const getRoleAvatarColors = useCallback(

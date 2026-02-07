@@ -334,6 +334,10 @@ export const PublicMetaSchema = z.object({
   organization: OrganizationContextSchema.optional(),
   locale: LocaleSettingsSchema.optional(),
   tags: z.array(z.string()).optional(),
+  /** Role display color (CSS class or hex value) */
+  color: z.string().max(100).optional(),
+  /** Role display icon (icon name or URL) */
+  icon: z.string().max(200).optional(),
 });
 
 export type PublicMeta = z.infer<typeof PublicMetaSchema>;

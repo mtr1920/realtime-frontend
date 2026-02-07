@@ -20,6 +20,9 @@ import type {
 import { DEFAULT_WEBRTC_CONFIG } from '../types/webrtc.types';
 
 const STALE_OFFER_TIMEOUT_MS = 8_000;
+const ICE_RESTART_MAX_ATTEMPTS = 5;
+const ICE_RESTART_BASE_DELAY_MS = 2_000;
+const ICE_RESTART_MAX_DELAY_MS = 16_000;
 
 // =============================================================================
 // Types
@@ -32,6 +35,8 @@ export interface PeerConnectionCallbacks {
   onNegotiationNeeded: () => void;
   onTrack: (track: RemoteTrack) => void;
   onTrackEnded: (trackId: string) => void;
+  /** Called when ICE restart attempts are exhausted */
+  onConnectionFailed?: (participantId: string) => void;
 }
 
 export interface PeerConnectionOptions {
@@ -70,6 +75,16 @@ export class PeerConnection {
    * Track remote tracks with onended handlers for cleanup
    */
   private trackedTracks: Set<MediaStreamTrack> = new Set();
+
+  /**
+   * ICE restart backoff state
+   */
+  private iceRestartAttempts = 0;
+  private iceRestartTimerId: ReturnType<typeof setTimeout> | null = null;
+  private iceRestartPromiseCallbacks: {
+    resolve: (value: RTCSessionDescriptionInit | null) => void;
+    reject: (reason: Error) => void;
+  } | null = null;
 
   constructor(options: PeerConnectionOptions) {
     this.participantId = options.participantId;
@@ -239,16 +254,90 @@ export class PeerConnection {
   }
 
   /**
-   * Restart ICE (for recovering failed connections)
+   * Restart ICE with exponential backoff (for recovering failed connections).
+   *
+   * Delay: min(2^attempts * 2000, 16000) ms
+   * Max attempts: 5, then emits onConnectionFailed
+   *
+   * @returns The offer description, or null if max attempts exceeded
    */
-  async restartIce(): Promise<RTCSessionDescriptionInit> {
-    this.makingOffer = true;
-    try {
-      const offer = await this.pc.createOffer({ iceRestart: true });
-      await this.pc.setLocalDescription(offer);
-      return this.pc.localDescription!;
-    } finally {
-      this.makingOffer = false;
+  async restartIce(): Promise<RTCSessionDescriptionInit | null> {
+    if (this.iceRestartAttempts >= ICE_RESTART_MAX_ATTEMPTS) {
+      logger.warn('ICE restart max attempts reached', {
+        participantId: this.participantId,
+        attempts: this.iceRestartAttempts,
+      });
+      this.callbacks.onConnectionFailed?.(this.participantId);
+      return null;
+    }
+
+    // Cancel any previously pending backoff timer and settle its promise
+    this.cancelPendingIceRestart('superseded');
+
+    const delay = Math.min(
+      Math.pow(2, this.iceRestartAttempts) * ICE_RESTART_BASE_DELAY_MS,
+      ICE_RESTART_MAX_DELAY_MS
+    );
+
+    this.iceRestartAttempts++;
+
+    logger.info('Scheduling ICE restart with backoff', {
+      participantId: this.participantId,
+      attempt: this.iceRestartAttempts,
+      delayMs: delay,
+    });
+
+    return new Promise<RTCSessionDescriptionInit | null>((resolve, reject) => {
+      this.iceRestartPromiseCallbacks = { resolve, reject };
+      this.iceRestartTimerId = setTimeout(async () => {
+        this.iceRestartTimerId = null;
+        this.iceRestartPromiseCallbacks = null;
+        this.makingOffer = true;
+        try {
+          const offer = await this.pc.createOffer({ iceRestart: true });
+          await this.pc.setLocalDescription(offer);
+          resolve(this.pc.localDescription!);
+        } catch (error) {
+          logger.warn('ICE restart offer failed', {
+            participantId: this.participantId,
+            attempt: this.iceRestartAttempts,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          resolve(null);
+        } finally {
+          this.makingOffer = false;
+        }
+      }, delay);
+    });
+  }
+
+  /**
+   * Reset ICE restart attempt counter.
+   * Call this when the connection successfully establishes.
+   */
+  resetIceRestartAttempts(): void {
+    this.iceRestartAttempts = 0;
+    this.cancelPendingIceRestart('reset');
+  }
+
+  /**
+   * Cancel any pending ICE restart timer and settle the pending promise.
+   * - 'superseded': resolved with null (new restart replaces old one)
+   * - 'closed': rejected with Error (connection was closed)
+   * - 'reset': resolved with null (connection recovered)
+   */
+  private cancelPendingIceRestart(reason: 'superseded' | 'closed' | 'reset'): void {
+    if (this.iceRestartTimerId !== null) {
+      clearTimeout(this.iceRestartTimerId);
+      this.iceRestartTimerId = null;
+    }
+    if (this.iceRestartPromiseCallbacks) {
+      if (reason === 'closed') {
+        this.iceRestartPromiseCallbacks.reject(new Error('PeerConnection closed'));
+      } else {
+        this.iceRestartPromiseCallbacks.resolve(null);
+      }
+      this.iceRestartPromiseCallbacks = null;
     }
   }
 
@@ -263,6 +352,9 @@ export class PeerConnection {
    * Close the connection
    */
   close(): void {
+    // Clean up ICE restart timer and reject pending promise
+    this.cancelPendingIceRestart('closed');
+
     // Clean up track.onended handlers to prevent memory leaks
     for (const track of this.trackedTracks) {
       track.onended = null;
@@ -285,6 +377,7 @@ export class PeerConnection {
     this.pendingIceCandidates = [];
     this.hasRemoteDescription = false;
     this.lastOfferCreatedAt = 0;
+    this.iceRestartAttempts = 0;
   }
 
   // ===========================================================================
@@ -322,6 +415,9 @@ export class PeerConnection {
    * The caller must re-add local tracks after calling this method.
    */
   recreateConnection(): void {
+    // Clean up ICE restart timer and settle pending promise
+    this.cancelPendingIceRestart('reset');
+
     // Clean up old connection
     this.pc.onconnectionstatechange = null;
     this.pc.oniceconnectionstatechange = null;
@@ -338,6 +434,7 @@ export class PeerConnection {
     this.makingOffer = false;
     this.ignoreOffer = false;
     this.lastOfferCreatedAt = 0;
+    this.iceRestartAttempts = 0;
 
     for (const track of this.trackedTracks) {
       track.onended = null;
@@ -356,9 +453,14 @@ export class PeerConnection {
   private setupEventHandlers(): void {
     // Connection state
     this.pc.onconnectionstatechange = () => {
-      this.callbacks.onConnectionStateChange(
-        this.pc.connectionState as PeerConnectionState
-      );
+      const state = this.pc.connectionState as PeerConnectionState;
+
+      // Reset ICE restart attempts on successful connection
+      if (state === 'connected') {
+        this.resetIceRestartAttempts();
+      }
+
+      this.callbacks.onConnectionStateChange(state);
     };
 
     // ICE connection state

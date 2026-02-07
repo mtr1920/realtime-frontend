@@ -50,11 +50,10 @@ export class WebRTCService {
   private isObserver: boolean;
   /** Track peers that have had local tracks added to prevent duplicate additions */
   private peersWithTracksAdded: Set<string> = new Set();
-  /** Suppresses negotiationneeded handling during remote offer processing.
-   * This is a service-level flag (not per-peer) which briefly suppresses all peers.
-   * In an N>2 scenario, a concurrent negotiationneeded from a different peer would
-   * be deferred — the browser will re-fire it after the flag clears. */
-  private processingRemoteOffer = false;
+  /** Tracks which peers currently have a remote offer being processed.
+   * Suppresses negotiationneeded only for the specific peer whose offer is in flight,
+   * allowing other peers' negotiationneeded events to proceed normally in N>2 sessions. */
+  private processingRemoteOfferFrom: Set<string> = new Set();
 
   constructor(options: WebRTCServiceOptions) {
     this.localParticipantId = options.localParticipantId;
@@ -334,6 +333,7 @@ export class WebRTCService {
     if (!peer) return;
 
     const offer = await peer.restartIce();
+    if (!offer) return;
     await this.signalingAdapter.sendOffer(
       participantId,
       offer.sdp!,
@@ -415,6 +415,8 @@ export class WebRTCService {
     });
     this.peers.clear();
     this.remoteTracks.clear();
+    this.peersWithTracksAdded.clear();
+    this.processingRemoteOfferFrom.clear();
   }
 
   // ===========================================================================
@@ -428,9 +430,9 @@ export class WebRTCService {
   ): Promise<void> {
     let peer = this.peers.get(fromParticipantId);
 
-    // Suppress negotiationneeded during remote offer processing to prevent
+    // Suppress negotiationneeded for THIS peer during remote offer processing to prevent
     // competing offers from addTrack/recreateConnection racing with handleOffer.
-    this.processingRemoteOffer = true;
+    this.processingRemoteOfferFrom.add(fromParticipantId);
     try {
       // If existing peer's connection is failed/closed (e.g., after resume from network loss),
       // recreate the connection and re-add local tracks for a clean restart.
@@ -473,7 +475,7 @@ export class WebRTCService {
     } catch (error) {
       this.onEvent?.({ type: 'failed', participantId: fromParticipantId, error: `Failed to handle offer: ${error}` });
     } finally {
-      this.processingRemoteOffer = false;
+      this.processingRemoteOfferFrom.delete(fromParticipantId);
     }
   }
 
@@ -561,8 +563,8 @@ export class WebRTCService {
   private handleNegotiationNeeded(participantId: string): void {
     // Observers don't send media, so they won't trigger renegotiation
     if (this.isObserver) return;
-    // Suppress during remote offer processing to prevent competing offers
-    if (this.processingRemoteOffer) return;
+    // Suppress during remote offer processing for THIS specific peer only
+    if (this.processingRemoteOfferFrom.has(participantId)) return;
 
     // For renegotiation between two non-observers, use ID ordering to determine
     // who creates the offer. Lower ID = impolite peer = creates offers.
