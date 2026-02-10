@@ -28,7 +28,11 @@ export default tseslint.config(
         'warn',
         {
           allowConstantExport: true,
-          allowExportNames: ['buttonVariants', 'badgeVariants', 'labelVariants']
+          allowExportNames: [
+            'buttonVariants',
+            'badgeVariants',
+            'labelVariants',
+          ],
         },
       ],
       '@typescript-eslint/no-unused-vars': [
@@ -44,7 +48,47 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'max-lines': ['error', { max: 700, skipBlankLines: true, skipComments: true }],
+      'max-lines': [
+        'error',
+        { max: 600, skipBlankLines: true, skipComments: true },
+      ],
+      'max-lines-per-function': [
+        'warn',
+        { max: 50, skipBlankLines: true, skipComments: true, IIFEs: true },
+      ],
+      'max-depth': ['error', 3],
+      complexity: ['warn', 15],
+      'max-params': ['warn', 4],
+    },
+  },
+  // Test files — relaxed limits
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+    rules: {
+      'max-lines': [
+        'warn',
+        { max: 900, skipBlankLines: true, skipComments: true },
+      ],
+      'no-console': 'off',
+      'max-lines-per-function': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  // Type definition files — relaxed line limit
+  {
+    files: ['**/types/**/*.ts', '**/*.types.ts', '**/*.d.ts'],
+    rules: {
+      'max-lines': [
+        'warn',
+        { max: 800, skipBlankLines: true, skipComments: true },
+      ],
+    },
+  },
+  // Generated files — exempt
+  {
+    files: ['**/*.generated.ts', '**/generated/**'],
+    rules: {
+      'max-lines': 'off',
     },
   }
 );

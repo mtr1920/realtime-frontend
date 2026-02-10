@@ -1,16 +1,51 @@
 /**
  * useSessionRecordings Hook
- * TanStack Query hook for fetching session recordings.
- *
- * Backend recordings endpoint is not yet implemented.
- * This adapter returns an empty array until the endpoint exists.
- * Replace the queryFn implementation when backend is ready.
+ * TanStack Query hook for fetching session recordings from the API.
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
+
+import { apiClient } from '@/shared/services/api-client';
 import { queryKeys } from '@/shared/services/query-keys';
 import type { Recording } from '../components/detail';
+
+interface RecordingApiResponse {
+  id: string;
+  sessionId: string;
+  kind: string;
+  status: string;
+  storageProvider: string;
+  storageUri: string | null;
+  startedAt: string | null;
+  endedAt: string | null;
+  durationMs: number | null;
+  sizeBytes: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface RecordingsListResponse {
+  recordings: RecordingApiResponse[];
+  pagination: {
+    total: number;
+    nextCursor: string | null;
+    hasMore: boolean;
+  };
+}
+
+function mapRecording(r: RecordingApiResponse): Recording {
+  return {
+    id: r.id,
+    kind: r.kind as Recording['kind'],
+    status: r.status as Recording['status'],
+    startedAt: r.startedAt,
+    endedAt: r.endedAt,
+    durationMs: r.durationMs,
+    sizeBytes: r.sizeBytes ? Number(r.sizeBytes) : null,
+  };
+}
 
 interface UseSessionRecordingsOptions {
   /** Whether the query is enabled */
@@ -29,9 +64,6 @@ interface UseSessionRecordingsReturn {
 /**
  * Hook to fetch recordings for a session.
  *
- * Backend recordings endpoint is not yet implemented.
- * This hook returns an empty array until the backend is ready.
- *
  * @example
  * ```ts
  * const { recordings, isLoading } = useSessionRecordings(sessionId);
@@ -47,12 +79,14 @@ export function useSessionRecordings(
   const query = useQuery({
     queryKey: queryKeys.sessions.recording(sessionId),
     queryFn: async (): Promise<Recording[]> => {
-      // Backend recordings endpoint not implemented - returns empty array
-      return [];
+      const response = await apiClient.get<RecordingsListResponse>(
+        `/v1/sessions/${sessionId}/recordings`
+      );
+      return response.recordings.map(mapRecording);
     },
     enabled: enabled && !!sessionId,
-    staleTime: 60 * 1000, // 1 minute - recordings don't change often
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const refetch = useCallback(async (): Promise<void> => {

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- Refactor: TASK-REFACTOR-003 extract wizard steps into sub-components */
 /**
  * SessionWizard Component
  *
@@ -42,7 +43,11 @@ import {
 } from '@/shared/ui';
 import { cn } from '@/shared/lib/utils';
 import { useWorkspaces, type Workspace } from '@/features/workspaces';
-import { useCreateSession, createSessionSchema, type CreateSessionFormData } from '@/features/sessions';
+import {
+  useCreateSession,
+  createSessionSchema,
+  type CreateSessionFormData,
+} from '@/features/sessions';
 import { WizardStepper, type WizardStep } from './WizardStepper';
 
 // =============================================================================
@@ -82,7 +87,8 @@ const DURATION_OPTIONS = [
 export function SessionWizard() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  const [createdSession, setCreatedSession] = useState<SessionCreatedData | null>(null);
+  const [createdSession, setCreatedSession] =
+    useState<SessionCreatedData | null>(null);
   const [copiedToken, setCopiedToken] = useState(false);
 
   // Fetch workspaces for selection
@@ -119,7 +125,9 @@ export function SessionWizard() {
   });
 
   const formValues = watch();
-  const selectedWorkspace = workspaces.find((w) => w.id === formValues.workspaceId);
+  const selectedWorkspace = workspaces.find(
+    (w) => w.id === formValues.workspaceId
+  );
 
   // Navigation handlers
   const goToStep = useCallback((step: number) => {
@@ -190,7 +198,7 @@ export function SessionWizard() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="mx-auto max-w-3xl space-y-8">
       {/* Back Button */}
       <Button
         variant="ghost"
@@ -246,7 +254,7 @@ export function SessionWizard() {
           </div>
 
           {/* Navigation Footer */}
-          <div className="border-t bg-muted/30 p-4">
+          <div className="bg-muted/30 border-t p-4">
             <div className="flex justify-between">
               <Button
                 type="button"
@@ -267,7 +275,7 @@ export function SessionWizard() {
                 <Button
                   type="submit"
                   disabled={isCreating || isLoadingWorkspaces}
-                  className="bg-gradient-to-r from-primary to-primary/80 press-effect"
+                  className="from-primary to-primary/80 press-effect bg-gradient-to-r"
                 >
                   {isCreating && (
                     <Loader2 className="mr-2 h-4 w-4 motion-safe:animate-spin" />
@@ -299,8 +307,8 @@ function StepContent({ isActive, children }: StepContentProps) {
       className={cn(
         'transition-all duration-300',
         isActive
-          ? 'opacity-100 translate-x-0'
-          : 'opacity-0 absolute inset-0 translate-x-8 pointer-events-none'
+          ? 'translate-x-0 opacity-100'
+          : 'pointer-events-none absolute inset-0 translate-x-8 opacity-0'
       )}
       aria-hidden={!isActive}
     >
@@ -335,8 +343,8 @@ function StepBasics({
     <>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
-            <Building2 className="w-6 h-6 text-primary" />
+          <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl">
+            <Building2 className="text-primary h-6 w-6" />
           </div>
           <div>
             <CardTitle>Select Workspace</CardTitle>
@@ -353,31 +361,31 @@ function StepBasics({
             Workspace <span className="text-destructive">*</span>
           </Label>
           {isLoadingWorkspaces ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {[1, 2, 3, 4].map((i) => (
                 <Skeleton key={i} className="h-20 rounded-xl" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {workspaces.map((workspace) => (
                 <button
                   key={workspace.id}
                   type="button"
                   onClick={() => setValue('workspaceId', workspace.id)}
                   className={cn(
-                    'relative flex flex-col items-start p-4 rounded-xl border-2 text-left',
-                    'transition-all duration-200 press-effect',
+                    'relative flex flex-col items-start rounded-xl border-2 p-4 text-left',
+                    'press-effect transition-all duration-200',
                     'hover:border-primary/50 hover:bg-muted/50',
                     selectedWorkspaceId === workspace.id
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                      ? 'border-primary bg-primary/5 ring-primary/20 ring-2'
                       : 'border-muted'
                   )}
                 >
-                  <div className="flex items-center justify-between w-full mb-1">
+                  <div className="mb-1 flex w-full items-center justify-between">
                     <span className="font-medium">{workspace.name}</span>
                     {selectedWorkspaceId === workspace.id && (
-                      <Check className="h-4 w-4 text-primary motion-safe:animate-check-bounce" />
+                      <Check className="text-primary motion-safe:animate-check-bounce h-4 w-4" />
                     )}
                   </div>
                   <Badge variant="outline" className="text-xs">
@@ -388,7 +396,7 @@ function StepBasics({
             </div>
           )}
           {errors.workspaceId && (
-            <p className="text-sm text-destructive flex items-center gap-1">
+            <p className="text-destructive flex items-center gap-1 text-sm">
               <AlertCircle className="h-3 w-3" />
               {errors.workspaceId.message}
             </p>
@@ -401,10 +409,12 @@ function StepBasics({
         <div className="space-y-2">
           <Label htmlFor="externalId">
             External ID
-            <span className="ml-1 text-xs text-muted-foreground">(Optional)</span>
+            <span className="text-muted-foreground ml-1 text-xs">
+              (Optional)
+            </span>
           </Label>
           <div className="relative">
-            <ExternalLink className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <ExternalLink className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
             <Input
               id="externalId"
               placeholder="e.g., MEETING-123, interview-abc"
@@ -412,7 +422,7 @@ function StepBasics({
               {...register('externalId')}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Link this session to your external systems
           </p>
         </div>
@@ -441,8 +451,8 @@ function StepConfiguration({
     <>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
-            <Clock className="w-6 h-6 text-primary" />
+          <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl">
+            <Clock className="text-primary h-6 w-6" />
           </div>
           <div>
             <CardTitle>Configure Session</CardTitle>
@@ -456,23 +466,23 @@ function StepConfiguration({
         {/* Duration Selection */}
         <div className="space-y-3">
           <Label>Session Duration</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {DURATION_OPTIONS.map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => setValue('expiresInMinutes', option.value)}
                 className={cn(
-                  'flex flex-col items-center p-4 rounded-xl border-2 text-center',
-                  'transition-all duration-200 press-effect',
+                  'flex flex-col items-center rounded-xl border-2 p-4 text-center',
+                  'press-effect transition-all duration-200',
                   'hover:border-primary/50 hover:bg-muted/50',
                   expiresInMinutes === option.value
-                    ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                    ? 'border-primary bg-primary/5 ring-primary/20 ring-2'
                     : 'border-muted'
                 )}
               >
                 <span className="font-semibold">{option.label}</span>
-                <span className="text-xs text-muted-foreground mt-0.5">
+                <span className="text-muted-foreground mt-0.5 text-xs">
                   {option.description}
                 </span>
               </button>
@@ -486,10 +496,12 @@ function StepConfiguration({
         <div className="space-y-2">
           <Label htmlFor="scheduledAt">
             Schedule For
-            <span className="ml-1 text-xs text-muted-foreground">(Optional)</span>
+            <span className="text-muted-foreground ml-1 text-xs">
+              (Optional)
+            </span>
           </Label>
           <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Calendar className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
             <Input
               id="scheduledAt"
               type="datetime-local"
@@ -497,7 +509,7 @@ function StepConfiguration({
               {...register('scheduledAt')}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Leave empty to create a session that starts immediately
           </p>
         </div>
@@ -517,49 +529,55 @@ interface StepReviewProps {
 }
 
 function StepReview({ workspace, formValues, isCreating }: StepReviewProps) {
-  const duration = DURATION_OPTIONS.find((d) => d.value === formValues.expiresInMinutes);
+  const duration = DURATION_OPTIONS.find(
+    (d) => d.value === formValues.expiresInMinutes
+  );
 
   return (
     <>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10">
-            <Video className="w-6 h-6 text-primary" />
+          <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-xl">
+            <Video className="text-primary h-6 w-6" />
           </div>
           <div>
             <CardTitle>Review & Create</CardTitle>
-            <CardDescription>
-              Confirm your session details
-            </CardDescription>
+            <CardDescription>Confirm your session details</CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4 p-4 rounded-xl bg-muted/50">
+        <div className="bg-muted/50 space-y-4 rounded-xl p-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Workspace</span>
-            <span className="text-sm font-medium">{workspace?.name || 'Not selected'}</span>
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Domain Type</span>
-            <Badge variant="outline">{workspace?.domainType || '-'}</Badge>
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">External ID</span>
-            <span className="text-sm font-mono">
-              {formValues.externalId || <span className="text-muted-foreground">None</span>}
+            <span className="text-muted-foreground text-sm">Workspace</span>
+            <span className="text-sm font-medium">
+              {workspace?.name || 'Not selected'}
             </span>
           </div>
           <Separator />
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Duration</span>
-            <span className="text-sm font-medium">{duration?.label || '-'}</span>
+            <span className="text-muted-foreground text-sm">Domain Type</span>
+            <Badge variant="outline">{workspace?.domainType || '-'}</Badge>
           </div>
           <Separator />
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Scheduled</span>
+            <span className="text-muted-foreground text-sm">External ID</span>
+            <span className="font-mono text-sm">
+              {formValues.externalId || (
+                <span className="text-muted-foreground">None</span>
+              )}
+            </span>
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground text-sm">Duration</span>
+            <span className="text-sm font-medium">
+              {duration?.label || '-'}
+            </span>
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground text-sm">Scheduled</span>
             <span className="text-sm">
               {formValues.scheduledAt
                 ? new Date(formValues.scheduledAt).toLocaleString()
@@ -569,7 +587,7 @@ function StepReview({ workspace, formValues, isCreating }: StepReviewProps) {
         </div>
 
         {isCreating && (
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="text-muted-foreground mt-4 flex items-center justify-center gap-2 text-sm">
             <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
             Creating your session...
           </div>
@@ -603,24 +621,24 @@ function SuccessState({
   onBackToSessions,
 }: SuccessStateProps) {
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
       <Button variant="ghost" onClick={onBackToSessions} className="gap-2">
         <ArrowLeft className="h-4 w-4" />
         Back to Sessions
       </Button>
 
-      <Card className="glass-card border-green-500/30 overflow-hidden">
+      <Card className="glass-card overflow-hidden border-green-500/30">
         {/* Success Animation Header */}
         <div className="relative bg-gradient-to-br from-green-500/10 to-emerald-500/10 py-8">
           <div className="flex flex-col items-center">
             <div
               className={cn(
-                'flex items-center justify-center w-20 h-20 rounded-full',
+                'flex h-20 w-20 items-center justify-center rounded-full',
                 'bg-green-500 text-white',
                 'motion-safe:animate-check-bounce'
               )}
             >
-              <Check className="w-10 h-10" />
+              <Check className="h-10 w-10" />
             </div>
             <h2 className="mt-4 text-2xl font-bold">Session Created!</h2>
             <p className="text-muted-foreground mt-1">
@@ -629,12 +647,15 @@ function SuccessState({
           </div>
 
           {/* Confetti-like decoration */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+          <div
+            className="pointer-events-none absolute inset-0 overflow-hidden"
+            aria-hidden
+          >
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
                 className={cn(
-                  'absolute w-2 h-2 rounded-full',
+                  'absolute h-2 w-2 rounded-full',
                   i % 3 === 0 && 'bg-green-400',
                   i % 3 === 1 && 'bg-emerald-400',
                   i % 3 === 2 && 'bg-teal-400',
@@ -652,22 +673,26 @@ function SuccessState({
 
         <CardContent className="space-y-6 pt-6">
           {/* Session Details */}
-          <div className="space-y-3 p-4 rounded-xl bg-muted/50">
+          <div className="bg-muted/50 space-y-3 rounded-xl p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Workspace</span>
-              <span className="text-sm font-medium">{session.workspaceName}</span>
+              <span className="text-muted-foreground text-sm">Workspace</span>
+              <span className="text-sm font-medium">
+                {session.workspaceName}
+              </span>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Session ID</span>
-              <code className="text-xs font-mono bg-muted px-2 py-1 rounded">
+              <span className="text-muted-foreground text-sm">Session ID</span>
+              <code className="bg-muted rounded px-2 py-1 font-mono text-xs">
                 {session.id.slice(0, 8)}...
               </code>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Expires</span>
-              <span className="text-sm">{formatDateTime(session.expiresAt)}</span>
+              <span className="text-muted-foreground text-sm">Expires</span>
+              <span className="text-sm">
+                {formatDateTime(session.expiresAt)}
+              </span>
             </div>
           </div>
 
@@ -698,22 +723,22 @@ function SuccessState({
                   )}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground flex items-start gap-1.5">
-                <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+              <p className="text-muted-foreground flex items-start gap-1.5 text-xs">
+                <AlertCircle className="mt-0.5 h-3 w-3 flex-shrink-0" />
                 Share this token securely. It&apos;s only shown once.
               </p>
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button className="flex-1 press-effect" onClick={onViewSession}>
+          <div className="flex flex-col gap-3 pt-4 sm:flex-row">
+            <Button className="press-effect flex-1" onClick={onViewSession}>
               <Video className="mr-2 h-4 w-4" />
               View Session
             </Button>
             <Button
               variant="outline"
-              className="flex-1 press-effect"
+              className="press-effect flex-1"
               onClick={onCreateAnother}
             >
               Create Another

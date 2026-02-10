@@ -1,0 +1,42 @@
+* text=auto eol=lf
+
+# Text files
+*.ts text
+*.tsx text
+*.js text
+*.jsx text
+*.json text
+*.md text
+*.yml text
+*.yaml text
+*.css text
+*.html text
+*.sql text
+*.prisma text
+*.graphql text
+*.env.example text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.mp4 binary
+*.webm binary
+*.pdf binary
+
+# Lockfiles — prevent merge conflicts
+pnpm-lock.yaml merge=binary
+package-lock.json merge=binary
+yarn.lock merge=binary
+
+# Linguist overrides
+*.test.ts linguist-detectable=false
+*.test.tsx linguist-detectable=false
+*.spec.ts linguist-detectable=false
+prisma/seed.ts linguist-generated=true

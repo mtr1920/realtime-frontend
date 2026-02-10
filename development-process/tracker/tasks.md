@@ -7,21 +7,21 @@
 
 ## Phase Summary
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| 1 | ✅ Complete | Foundation (setup, routing, state, UI) |
-| 1.5 | ✅ Complete | Theme System (tokens, provider, FOUC prevention) |
-| 1.6 | ✅ Complete | Modernization (FSD, types, auth consolidation) |
-| 2 | ✅ Complete | Authentication (login, SSO, permissions) |
-| 3 | ✅ Complete | Session Management (WebSocket, lobby, room) |
-| 4 | ✅ Complete | Media & WebRTC (devices, P2P, screen share) |
-| 5 | ✅ Complete | AI Integration (audio capture/playback, actors) |
-| 6 | ✅ Complete | Compliance & Recording (proctoring, consent, mix) |
-| 7 | ✅ Complete | Admin, Outcomes & Integrations (CRUD, connectors) |
-| 8 | ✅ Complete | Polish & Testing (coverage, E2E, performance) |
-| 9 | ✅ Complete | Agent Verification (8 agent reviews) |
-| 10 | ✅ Complete | Critical Remediation (reduced motion, empty states) |
-| 11 | 🔄 In Progress | Documentation & Hardening |
+| Phase | Status         | Description                                         |
+| ----- | -------------- | --------------------------------------------------- |
+| 1     | ✅ Complete    | Foundation (setup, routing, state, UI)              |
+| 1.5   | ✅ Complete    | Theme System (tokens, provider, FOUC prevention)    |
+| 1.6   | ✅ Complete    | Modernization (FSD, types, auth consolidation)      |
+| 2     | ✅ Complete    | Authentication (login, SSO, permissions)            |
+| 3     | ✅ Complete    | Session Management (WebSocket, lobby, room)         |
+| 4     | ✅ Complete    | Media & WebRTC (devices, P2P, screen share)         |
+| 5     | ✅ Complete    | AI Integration (audio capture/playback, actors)     |
+| 6     | ✅ Complete    | Compliance & Recording (proctoring, consent, mix)   |
+| 7     | ✅ Complete    | Admin, Outcomes & Integrations (CRUD, connectors)   |
+| 8     | ✅ Complete    | Polish & Testing (coverage, E2E, performance)       |
+| 9     | ✅ Complete    | Agent Verification (8 agent reviews)                |
+| 10    | ✅ Complete    | Critical Remediation (reduced motion, empty states) |
+| 11    | 🔄 In Progress | Documentation & Hardening                           |
 
 ---
 
@@ -53,6 +53,25 @@
 - [x] Consolidate all tests to centralized `src/test/unit/` folder
 - [x] Update all relative imports to use absolute `@/` paths
 - [x] Verify: 1532 tests passing, typecheck clean, lint clean
+
+### Code Quality Enforcement ✅ Complete
+
+- [x] Add tiered file length enforcement (600/900/800), max-depth, complexity, max-params ESLint rules
+- [x] Add commitlint, husky hooks, .editorconfig, .gitattributes, CONTRIBUTING.md
+- [x] Add eslint-disable with tracking comments for existing violations
+
+### File Length Refactoring (TASK-REFACTOR-007)
+
+Files with `eslint-disable` that need refactoring to remove the disable:
+
+- [ ] `features/media/hooks/useDeviceSwitch.ts` — flatten nested device switching (max-depth)
+- [ ] `features/media/services/stats-monitor.service.ts` — flatten nested stats processing (max-depth)
+- [ ] `features/media/services/webrtc.service.ts` — flatten nested peer connection logic (max-depth)
+- [ ] `features/recording/hooks/useRecording.ts` — flatten nested recording state logic (max-depth)
+- [ ] `features/sessions/components/room/MediaInitializer.tsx` — flatten nested media init conditions (max-depth)
+- [ ] `features/sessions/components/wizard/SessionWizard.tsx` (726 lines) — extract wizard steps
+- [ ] `features/realtime/services/websocket.service.ts` (730 lines) — split by domain
+- [ ] `features/ai/components/AIActorForm.tsx` (631 lines) — extract form sections
 
 ---
 
@@ -88,9 +107,9 @@
 
 ### Results
 
-| File | Before | After | Reduction |
-|------|--------|-------|-----------|
-| SessionRoomContent.tsx | 742 | 414 | 328 lines (44%) |
+| File                   | Before | After | Reduction       |
+| ---------------------- | ------ | ----- | --------------- |
+| SessionRoomContent.tsx | 742    | 414   | 328 lines (44%) |
 
 ---
 
@@ -150,31 +169,31 @@
 
 ## Phase 11 Gate Criteria
 
-| Gate ID | Criterion | Command | Status |
-|---------|-----------|---------|--------|
-| PG-11.1 | TypeScript compiles | `pnpm typecheck:web` | ⏳ |
-| PG-11.2 | Lint passes | `pnpm lint:web` | ⏳ |
-| PG-11.3 | Build succeeds | `pnpm build:web` | ⏳ |
-| PG-11.4 | Unit tests pass | `pnpm test:web` | ⏳ |
-| PG-11.5 | Documentation complete | Manual review | ⏳ |
-| PG-11.6 | All links work | Manual review | ⏳ |
+| Gate ID | Criterion              | Command              | Status |
+| ------- | ---------------------- | -------------------- | ------ |
+| PG-11.1 | TypeScript compiles    | `pnpm typecheck:web` | ⏳     |
+| PG-11.2 | Lint passes            | `pnpm lint:web`      | ⏳     |
+| PG-11.3 | Build succeeds         | `pnpm build:web`     | ⏳     |
+| PG-11.4 | Unit tests pass        | `pnpm test:web`      | ⏳     |
+| PG-11.5 | Documentation complete | Manual review        | ⏳     |
+| PG-11.6 | All links work         | Manual review        | ⏳     |
 
 ---
 
 ## Phase 12 Gate Criteria
 
-| Gate ID | Criterion | Command | Status |
-|---------|-----------|---------|--------|
-| PG-12.1 | TypeScript compiles | `pnpm typecheck:web` | ✅ |
-| PG-12.2 | Lint passes | `pnpm lint:web` | ✅ |
-| PG-12.3 | Build succeeds | `pnpm build:web` | ⏳ |
-| PG-12.4 | Unit tests pass | `pnpm test:web` | ✅ (pre-existing failures) |
-| PG-12.5 | E2E tests pass | `pnpm test:web:e2e` | ⏳ |
-| PG-12.6 | No duplicate hooks | Manual review | ✅ |
-| PG-12.7 | No duplicate store state | Manual review | ✅ |
-| PG-12.8 | All components < 300 lines | Manual review | 🔄 (large files deferred) |
-| PG-12.9 | Shared components created | 5 components | ✅ |
-| PG-12.10 | Dialogs refactored | 4 dialogs | ✅ (partial) |
+| Gate ID  | Criterion                  | Command              | Status                     |
+| -------- | -------------------------- | -------------------- | -------------------------- |
+| PG-12.1  | TypeScript compiles        | `pnpm typecheck:web` | ✅                         |
+| PG-12.2  | Lint passes                | `pnpm lint:web`      | ✅                         |
+| PG-12.3  | Build succeeds             | `pnpm build:web`     | ⏳                         |
+| PG-12.4  | Unit tests pass            | `pnpm test:web`      | ✅ (pre-existing failures) |
+| PG-12.5  | E2E tests pass             | `pnpm test:web:e2e`  | ⏳                         |
+| PG-12.6  | No duplicate hooks         | Manual review        | ✅                         |
+| PG-12.7  | No duplicate store state   | Manual review        | ✅                         |
+| PG-12.8  | All components < 300 lines | Manual review        | 🔄 (large files deferred)  |
+| PG-12.9  | Shared components created  | 5 components         | ✅                         |
+| PG-12.10 | Dialogs refactored         | 4 dialogs            | ✅ (partial)               |
 
 ---
 
@@ -206,13 +225,13 @@
 
 ## Quality Metrics
 
-| Metric | Value | Target |
-|--------|-------|--------|
-| Unit Tests | 1410 passing | - |
-| E2E Tests | 50 passing, 71 skipped | - |
-| Main Bundle | 36.75KB gzip | < 150KB |
-| TypeScript | 0 errors | 0 |
-| ESLint | 0 errors | 0 |
+| Metric      | Value                  | Target  |
+| ----------- | ---------------------- | ------- |
+| Unit Tests  | 1410 passing           | -       |
+| E2E Tests   | 50 passing, 71 skipped | -       |
+| Main Bundle | 36.75KB gzip           | < 150KB |
+| TypeScript  | 0 errors               | 0       |
+| ESLint      | 0 errors               | 0       |
 
 ---
 
@@ -224,4 +243,4 @@
 
 ---
 
-*Last Updated: 2026-01-28*
+_Last Updated: 2026-01-28_

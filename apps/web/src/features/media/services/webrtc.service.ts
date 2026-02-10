@@ -1,3 +1,4 @@
+/* eslint-disable max-depth -- Refactor: TASK-REFACTOR-007 flatten nested peer connection logic */
 /**
  * WebRTC Service
  *
@@ -226,10 +227,11 @@ export class WebRTCService {
     oldTrackId: string,
     newTrack: MediaStreamTrack
   ): Promise<void> {
-    const promises = Array.from(this.peers.entries()).map(([participantId, peer]) =>
-      peer.replaceTrack(oldTrackId, newTrack).catch((err) => {
-        this.onEvent?.({ type: 'failed', participantId, error: String(err) });
-      })
+    const promises = Array.from(this.peers.entries()).map(
+      ([participantId, peer]) =>
+        peer.replaceTrack(oldTrackId, newTrack).catch((err) => {
+          this.onEvent?.({ type: 'failed', participantId, error: String(err) });
+        })
     );
     await Promise.all(promises);
   }
@@ -334,11 +336,7 @@ export class WebRTCService {
 
     const offer = await peer.restartIce();
     if (!offer) return;
-    await this.signalingAdapter.sendOffer(
-      participantId,
-      offer.sdp!,
-      'media'
-    );
+    await this.signalingAdapter.sendOffer(participantId, offer.sdp!, 'media');
   }
 
   /**
@@ -380,8 +378,7 @@ export class WebRTCService {
           this.handleIceConnectionStateChange(participantId, state),
         onIceCandidate: (candidate) =>
           this.handleLocalIceCandidate(participantId, candidate),
-        onNegotiationNeeded: () =>
-          this.handleNegotiationNeeded(participantId),
+        onNegotiationNeeded: () => this.handleNegotiationNeeded(participantId),
         onTrack: (track) => this.handleRemoteTrack(track),
         onTrackEnded: (trackId) =>
           this.handleRemoteTrackEnded(participantId, trackId),
@@ -398,13 +395,13 @@ export class WebRTCService {
 
     try {
       const offer = await peer.createOffer();
-      await this.signalingAdapter.sendOffer(
-        participantId,
-        offer.sdp!,
-        'media'
-      );
+      await this.signalingAdapter.sendOffer(participantId, offer.sdp!, 'media');
     } catch (error) {
-      this.onEvent?.({ type: 'failed', participantId, error: `Failed to create offer: ${error}` });
+      this.onEvent?.({
+        type: 'failed',
+        participantId,
+        error: `Failed to create offer: ${error}`,
+      });
     }
   }
 
@@ -439,10 +436,13 @@ export class WebRTCService {
       if (peer) {
         const state = peer.connectionState;
         if (state === 'failed' || state === 'closed') {
-          logger.warn('Recreating failed/closed PeerConnection for incoming offer', {
-            remoteParticipantId: fromParticipantId,
-            connectionState: state,
-          });
+          logger.warn(
+            'Recreating failed/closed PeerConnection for incoming offer',
+            {
+              remoteParticipantId: fromParticipantId,
+              connectionState: state,
+            }
+          );
           peer.recreateConnection();
           this.peersWithTracksAdded.delete(fromParticipantId);
           if (!this.isObserver) {
@@ -473,7 +473,11 @@ export class WebRTCService {
         );
       }
     } catch (error) {
-      this.onEvent?.({ type: 'failed', participantId: fromParticipantId, error: `Failed to handle offer: ${error}` });
+      this.onEvent?.({
+        type: 'failed',
+        participantId: fromParticipantId,
+        error: `Failed to handle offer: ${error}`,
+      });
     } finally {
       this.processingRemoteOfferFrom.delete(fromParticipantId);
     }
@@ -490,7 +494,11 @@ export class WebRTCService {
     try {
       await peer.handleAnswer({ type: 'answer', sdp });
     } catch (error) {
-      this.onEvent?.({ type: 'failed', participantId: fromParticipantId, error: `Failed to handle answer: ${error}` });
+      this.onEvent?.({
+        type: 'failed',
+        participantId: fromParticipantId,
+        error: `Failed to handle answer: ${error}`,
+      });
     }
   }
 
@@ -504,7 +512,10 @@ export class WebRTCService {
     try {
       await peer.addIceCandidate(candidate);
     } catch (error) {
-      logger.error(`Failed to add ICE candidate from ${fromParticipantId}:`, error);
+      logger.error(
+        `Failed to add ICE candidate from ${fromParticipantId}:`,
+        error
+      );
     }
   }
 
@@ -530,7 +541,11 @@ export class WebRTCService {
     } else if (state === 'disconnected') {
       this.onEvent?.({ type: 'disconnected', participantId });
     } else if (state === 'failed') {
-      this.onEvent?.({ type: 'failed', participantId, error: 'Connection failed' });
+      this.onEvent?.({
+        type: 'failed',
+        participantId,
+        error: 'Connection failed',
+      });
     }
   }
 
@@ -541,7 +556,11 @@ export class WebRTCService {
     // Auto-restart ICE on failure
     if (state === 'failed') {
       this.restartIce(participantId).catch((err) => {
-        this.onEvent?.({ type: 'failed', participantId, error: `ICE restart failed: ${err}` });
+        this.onEvent?.({
+          type: 'failed',
+          participantId,
+          error: `ICE restart failed: ${err}`,
+        });
       });
     }
   }
@@ -573,7 +592,11 @@ export class WebRTCService {
     const isInitiator = this.isInitiatorWith(participantId);
     if (isInitiator) {
       this.initiateNegotiation(participantId).catch((err) => {
-        this.onEvent?.({ type: 'failed', participantId, error: `Negotiation failed: ${err}` });
+        this.onEvent?.({
+          type: 'failed',
+          participantId,
+          error: `Negotiation failed: ${err}`,
+        });
       });
     }
   }
@@ -587,10 +610,7 @@ export class WebRTCService {
     });
   }
 
-  private handleRemoteTrackEnded(
-    participantId: string,
-    trackId: string
-  ): void {
+  private handleRemoteTrackEnded(participantId: string, trackId: string): void {
     this.remoteTracks.delete(trackId);
     this.onEvent?.({ type: 'trackRemoved', participantId, trackId });
   }
@@ -602,7 +622,9 @@ export class WebRTCService {
 
 let instance: WebRTCService | null = null;
 
-export function createWebRTCService(options: WebRTCServiceOptions): WebRTCService {
+export function createWebRTCService(
+  options: WebRTCServiceOptions
+): WebRTCService {
   if (instance) {
     instance.stop();
   }

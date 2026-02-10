@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 /**
  * WebSocket message types and payloads
  *
@@ -727,7 +726,13 @@ export interface ComplianceVerificationRequestPayload {
 // Recording Payloads (Server -> Client)
 // =============================================================================
 
-export type RecordingStatus = 'pending' | 'recording' | 'paused' | 'processing' | 'completed' | 'failed';
+export type RecordingStatus =
+  | 'pending'
+  | 'recording'
+  | 'paused'
+  | 'processing'
+  | 'completed'
+  | 'failed';
 
 /**
  * Recording started payload (Server -> Client).
@@ -1038,7 +1043,7 @@ export interface ClientMessagePayloads {
   'recording.encryption.keyExchange': EncryptionKeyExchangePayload;
   // Removed recording.chunk - backend doesn't support chunked upload from client
   'transcript.sync.request': TranscriptSyncRequestPayload;
-  'ping': Record<string, never>;
+  ping: Record<string, never>;
 }
 
 /**
@@ -1112,8 +1117,8 @@ export interface ServerMessagePayloads {
   'transcript.sync.response': TranscriptSyncResponsePayload;
   // Added transcript acknowledgment from backend
   'transcript.ack': TranscriptAckPayload;
-  'error': ErrorPayload;
-  'pong': Record<string, never>;
+  error: ErrorPayload;
+  pong: Record<string, never>;
 }
 
 // =============================================================================

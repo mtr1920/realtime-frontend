@@ -15,7 +15,9 @@ out/
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
 *.swp
 *.swo
 *~
@@ -49,3 +51,28 @@ test-results/
 
 # Uploads folder (mounted S3 or local storage)
 uploads/
+
+# Environment (extended)
+.env.development
+.env.staging
+.env.production
+*.pem
+*.key
+*.cert
+
+# OS (extended)
+Desktop.ini
+ehthumbs.db
+
+# Logs
+logs/
+
+# Docker
+docker/volumes/
+.docker-data/
+
+# Cache
+.cache/
+
+# Generated
+*.generated.ts

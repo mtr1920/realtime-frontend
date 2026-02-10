@@ -232,7 +232,6 @@ describe('MediaCaptureService', () => {
     it('should throw not_supported when getDisplayMedia is unavailable', async () => {
       // Temporarily remove getDisplayMedia from the mock
       const originalGetDisplayMedia = mockMediaDevices.getDisplayMedia;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockMediaDevices as any).getDisplayMedia = undefined;
 
       await expect(service.captureScreen()).rejects.toMatchObject({
@@ -241,7 +240,6 @@ describe('MediaCaptureService', () => {
       });
 
       // Restore getDisplayMedia
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockMediaDevices as any).getDisplayMedia = originalGetDisplayMedia;
     });
 
@@ -388,15 +386,51 @@ describe('MediaCaptureService', () => {
       errorName: string;
       expectedType: MediaError['type'];
     }> = [
-      { name: 'NotAllowedError', errorName: 'NotAllowedError', expectedType: 'permission_denied' },
-      { name: 'PermissionDeniedError', errorName: 'PermissionDeniedError', expectedType: 'permission_denied' },
-      { name: 'NotFoundError', errorName: 'NotFoundError', expectedType: 'device_not_found' },
-      { name: 'DevicesNotFoundError', errorName: 'DevicesNotFoundError', expectedType: 'device_not_found' },
-      { name: 'NotReadableError', errorName: 'NotReadableError', expectedType: 'device_in_use' },
-      { name: 'TrackStartError', errorName: 'TrackStartError', expectedType: 'device_in_use' },
-      { name: 'OverconstrainedError', errorName: 'OverconstrainedError', expectedType: 'overconstrained' },
-      { name: 'TypeError', errorName: 'TypeError', expectedType: 'not_supported' },
-      { name: 'NotSupportedError', errorName: 'NotSupportedError', expectedType: 'not_supported' },
+      {
+        name: 'NotAllowedError',
+        errorName: 'NotAllowedError',
+        expectedType: 'permission_denied',
+      },
+      {
+        name: 'PermissionDeniedError',
+        errorName: 'PermissionDeniedError',
+        expectedType: 'permission_denied',
+      },
+      {
+        name: 'NotFoundError',
+        errorName: 'NotFoundError',
+        expectedType: 'device_not_found',
+      },
+      {
+        name: 'DevicesNotFoundError',
+        errorName: 'DevicesNotFoundError',
+        expectedType: 'device_not_found',
+      },
+      {
+        name: 'NotReadableError',
+        errorName: 'NotReadableError',
+        expectedType: 'device_in_use',
+      },
+      {
+        name: 'TrackStartError',
+        errorName: 'TrackStartError',
+        expectedType: 'device_in_use',
+      },
+      {
+        name: 'OverconstrainedError',
+        errorName: 'OverconstrainedError',
+        expectedType: 'overconstrained',
+      },
+      {
+        name: 'TypeError',
+        errorName: 'TypeError',
+        expectedType: 'not_supported',
+      },
+      {
+        name: 'NotSupportedError',
+        errorName: 'NotSupportedError',
+        expectedType: 'not_supported',
+      },
     ];
 
     errorCases.forEach(({ name, errorName, expectedType }) => {

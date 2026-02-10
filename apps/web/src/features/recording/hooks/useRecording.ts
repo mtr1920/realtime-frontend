@@ -1,3 +1,4 @@
+/* eslint-disable max-depth -- Refactor: TASK-REFACTOR-007 flatten nested recording state logic */
 /**
  * useRecording Hook
  *
@@ -117,7 +118,9 @@ export function useRecording({
   // Refs for services
   const mixerRef = useRef<RecordingMixerService | null>(null);
   const recorderRef = useRef<RecordingStreamService | null>(null);
-  const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const durationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
   const startTimeRef = useRef<number>(0);
   const currentRecordingIdRef = useRef<string | null>(null);
   const encryptionKeyRef = useRef<EncryptionKey | null>(null);
@@ -153,7 +156,11 @@ export function useRecording({
   // Subscribe to recording status updates
   // Backend sends durationSeconds, convert to ms for store
   useSubscription('recording.status', (payload) => {
-    updateStatus(payload.recordingId, payload.durationSeconds * 1000, payload.status);
+    updateStatus(
+      payload.recordingId,
+      payload.durationSeconds * 1000,
+      payload.status
+    );
   });
 
   // Start duration tracking
@@ -178,7 +185,9 @@ export function useRecording({
   // Initialize encryption key when recording starts
   const initializeEncryption = useCallback(async () => {
     if (!isCryptoAvailable()) {
-      console.warn('[useRecording] Web Crypto API not available, encryption disabled');
+      console.warn(
+        '[useRecording] Web Crypto API not available, encryption disabled'
+      );
       return false;
     }
 
@@ -216,7 +225,10 @@ export function useRecording({
         // When backend supports chunked upload, encrypt and send via WebSocket
         // This code is ready for when recording.chunk is re-enabled
         if (encryptionKeyRef.current && keySharedRef.current) {
-          const encrypted = await encryptBlob(chunk, encryptionKeyRef.current.key);
+          const encrypted = await encryptBlob(
+            chunk,
+            encryptionKeyRef.current.key
+          );
           // Future: send encrypted chunk via WebSocket
           // send('recording.chunk', {
           //   recordingId: currentRecordingIdRef.current,
@@ -298,7 +310,10 @@ export function useRecording({
 
         // Combine video and mixed audio
         const mixedAudio = mixerRef.current.getOutputStream();
-        const combinedStream = combineStreams(streams.video || null, mixedAudio);
+        const combinedStream = combineStreams(
+          streams.video || null,
+          mixedAudio
+        );
 
         // Create recorder with streaming callback
         recorderRef.current = createRecordingStream(combinedStream, {
@@ -315,7 +330,8 @@ export function useRecording({
         recorderRef.current.start();
         startDurationTracking();
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to start recording';
+        const message =
+          error instanceof Error ? error.message : 'Failed to start recording';
         setStoreError('START_ERROR', message);
       }
     },
@@ -365,7 +381,8 @@ export function useRecording({
       // Notify server
       send('recording.stop', { reason: 'user_action' });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to stop recording';
+      const message =
+        error instanceof Error ? error.message : 'Failed to stop recording';
       setStoreError('STOP_ERROR', message);
     }
   }, [status, send, setStoreError, stopDurationTracking, streamChunk]);

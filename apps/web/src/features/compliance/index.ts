@@ -37,7 +37,10 @@ export type {
 
 // Hooks
 export { useBrowserLock } from './hooks/useBrowserLock';
-export type { UseBrowserLockOptions, UseBrowserLockResult } from './hooks/useBrowserLock';
+export type {
+  UseBrowserLockOptions,
+  UseBrowserLockResult,
+} from './hooks/useBrowserLock';
 export { useIdentityChallenge } from './hooks/useIdentityChallenge';
 export type {
   UseIdentityChallengeOptions,
@@ -53,6 +56,11 @@ export type {
   UseComplianceCaptureOptions,
   UseComplianceCaptureResult,
 } from './hooks/useComplianceCapture';
+export { useComplianceReport } from './hooks/useComplianceReport';
+export type {
+  ComplianceReport,
+  UseComplianceReportResult,
+} from './hooks/useComplianceReport';
 
 // Services
 export {

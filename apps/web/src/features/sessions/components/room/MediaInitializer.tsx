@@ -1,3 +1,4 @@
+/* eslint-disable max-depth -- Refactor: TASK-REFACTOR-007 flatten nested media init conditions */
 /**
  * MediaInitializer
  *
@@ -6,7 +7,13 @@
  * Only initializes media when modules are enabled and user has permissions.
  */
 
-import { useEffect, useTransition, useRef, useState, type ReactNode } from 'react';
+import {
+  useEffect,
+  useTransition,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useLocalMedia, useMediaDevices, useWebRTC } from '@/features/media';
 import { useSend } from '@/features/realtime';
 import { useSessionStore } from '@/shared/stores/session.store';
@@ -40,7 +47,9 @@ export function MediaInitializer({
   // Session state
   const localParticipantId = useSessionStore((s) => s.localParticipantId);
   const localParticipant = useSessionStore((s) => s.getLocalParticipant());
-  const updateParticipantMedia = useSessionStore((s) => s.updateParticipantMedia);
+  const updateParticipantMedia = useSessionStore(
+    (s) => s.updateParticipantMedia
+  );
 
   // User media preferences (set in lobby)
   const isAudioEnabled = useMediaStore((s) => s.isAudioEnabled);
@@ -81,7 +90,9 @@ export function MediaInitializer({
     // If user disabled all media, mark as ready without requesting permissions
     if (!shouldInitMedia) {
       initAttemptedRef.current = true;
-      logger.info('[MediaInitializer] User disabled all media, skipping permissions');
+      logger.info(
+        '[MediaInitializer] User disabled all media, skipping permissions'
+      );
       setMediaReady(true);
       return;
     }
@@ -114,8 +125,10 @@ export function MediaInitializer({
             });
 
             if (mountedRef.current) {
-              const { isAudioEnabled: audioEnabledNow, isVideoEnabled: videoEnabledNow } =
-                useMediaStore.getState();
+              const {
+                isAudioEnabled: audioEnabledNow,
+                isVideoEnabled: videoEnabledNow,
+              } = useMediaStore.getState();
               const audioEnabled =
                 audioEnabledNow && canPublishAudio && isModuleEnabled('audio');
               const videoEnabled =
@@ -128,12 +141,18 @@ export function MediaInitializer({
                 });
               }
               if (canPublishAudio && isModuleEnabled('audio')) {
-                send('media.toggle', { kind: 'audio', enabled: audioEnabled }).catch(() => {
+                send('media.toggle', {
+                  kind: 'audio',
+                  enabled: audioEnabled,
+                }).catch(() => {
                   // Non-fatal: local state is already updated
                 });
               }
               if (canPublishVideo && isModuleEnabled('video')) {
-                send('media.toggle', { kind: 'video', enabled: videoEnabled }).catch(() => {
+                send('media.toggle', {
+                  kind: 'video',
+                  enabled: videoEnabled,
+                }).catch(() => {
                   // Non-fatal: local state is already updated
                 });
               }

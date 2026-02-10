@@ -1,3 +1,4 @@
+/* eslint-disable max-depth -- Refactor: TASK-REFACTOR-007 flatten nested device switching logic */
 /**
  * useDeviceSwitch Hook
  *
@@ -37,8 +38,12 @@ export function useDeviceSwitch(): UseDeviceSwitchReturn {
   const permissionError = useMediaStore((s) => s.permissionError);
   const selectedAudioInput = useMediaStore((s) => s.selectedAudioInput);
   const selectedVideoInput = useMediaStore((s) => s.selectedVideoInput);
-  const audioInitializationFailed = useMediaStore((s) => s.audioInitializationFailed);
-  const videoInitializationFailed = useMediaStore((s) => s.videoInitializationFailed);
+  const audioInitializationFailed = useMediaStore(
+    (s) => s.audioInitializationFailed
+  );
+  const videoInitializationFailed = useMediaStore(
+    (s) => s.videoInitializationFailed
+  );
   const setLocalStream = useMediaStore((s) => s.setLocalStream);
   const setLocalAudioTrack = useMediaStore((s) => s.setLocalAudioTrack);
   const setLocalVideoTrack = useMediaStore((s) => s.setLocalVideoTrack);
@@ -46,8 +51,12 @@ export function useDeviceSwitch(): UseDeviceSwitchReturn {
   const setVideoEnabledStore = useMediaStore((s) => s.setVideoEnabled);
   const setPermissions = useMediaStore((s) => s.setPermissions);
   const setPermissionError = useMediaStore((s) => s.setPermissionError);
-  const setAudioInitializationFailed = useMediaStore((s) => s.setAudioInitializationFailed);
-  const setVideoInitializationFailed = useMediaStore((s) => s.setVideoInitializationFailed);
+  const setAudioInitializationFailed = useMediaStore(
+    (s) => s.setAudioInitializationFailed
+  );
+  const setVideoInitializationFailed = useMediaStore(
+    (s) => s.setVideoInitializationFailed
+  );
 
   // Local refs
   const mountedRef = useRef(true);
@@ -70,7 +79,11 @@ export function useDeviceSwitch(): UseDeviceSwitchReturn {
       // Case 1: Active stream - replace track
       if (localStream) {
         try {
-          const newTrack = await mediaCaptureService.replaceTrack(localStream, 'audio', deviceId);
+          const newTrack = await mediaCaptureService.replaceTrack(
+            localStream,
+            'audio',
+            deviceId
+          );
           newTrack.enabled = isAudioEnabled;
           setLocalAudioTrack(newTrack);
           setAudioInitializationFailed(false, null);
@@ -101,7 +114,10 @@ export function useDeviceSwitch(): UseDeviceSwitchReturn {
           setAudioInitializationFailed(false, null);
 
           if (localVideoTrack && result.audioTrack) {
-            const combinedStream = new MediaStream([result.audioTrack, localVideoTrack]);
+            const combinedStream = new MediaStream([
+              result.audioTrack,
+              localVideoTrack,
+            ]);
             result.videoTrack?.stop();
             setLocalStream(combinedStream);
           } else {
@@ -152,11 +168,18 @@ export function useDeviceSwitch(): UseDeviceSwitchReturn {
       // Case 1: Active stream - replace track
       if (localStream) {
         try {
-          const newTrack = await mediaCaptureService.replaceTrack(localStream, 'video', deviceId);
+          const newTrack = await mediaCaptureService.replaceTrack(
+            localStream,
+            'video',
+            deviceId
+          );
           newTrack.enabled = isVideoEnabled;
           setLocalVideoTrack(newTrack);
           setLocalStream(
-            new MediaStream([...localStream.getAudioTracks(), ...localStream.getVideoTracks()])
+            new MediaStream([
+              ...localStream.getAudioTracks(),
+              ...localStream.getVideoTracks(),
+            ])
           );
           setVideoInitializationFailed(false, null);
           if (!hasVideoPermission || permissionError) {
@@ -172,7 +195,9 @@ export function useDeviceSwitch(): UseDeviceSwitchReturn {
 
       // Case 2: Should reinitialize (failure, permission error, or needs recovery)
       const shouldReinitialize =
-        videoInitializationFailed || Boolean(permissionError) || (!hasVideoPermission && isVideoEnabled);
+        videoInitializationFailed ||
+        Boolean(permissionError) ||
+        (!hasVideoPermission && isVideoEnabled);
 
       if (!shouldReinitialize) {
         return;
@@ -200,7 +225,10 @@ export function useDeviceSwitch(): UseDeviceSwitchReturn {
         setVideoInitializationFailed(false, null);
 
         if (localAudioTrack && result.videoTrack) {
-          const combinedStream = new MediaStream([localAudioTrack, result.videoTrack]);
+          const combinedStream = new MediaStream([
+            localAudioTrack,
+            result.videoTrack,
+          ]);
           result.audioTrack?.stop();
           setLocalStream(combinedStream);
         } else {

@@ -1,3 +1,4 @@
+/* eslint-disable max-depth -- Refactor: TASK-REFACTOR-007 flatten nested stats processing */
 /**
  * Stats Monitor Service
  *
@@ -68,9 +69,7 @@ interface ExtractedStats {
   outgoingBandwidth: number;
 }
 
-async function extractStats(
-  report: RTCStatsReport
-): Promise<ExtractedStats> {
+async function extractStats(report: RTCStatsReport): Promise<ExtractedStats> {
   let rtt = 0;
   let jitter = 0;
   let packetsLost = 0;
@@ -106,8 +105,7 @@ async function extractStats(
 
   // Calculate packet loss percentage
   const totalPackets = packetsLost + packetsReceived;
-  const packetLoss =
-    totalPackets > 0 ? (packetsLost / totalPackets) * 100 : 0;
+  const packetLoss = totalPackets > 0 ? (packetsLost / totalPackets) * 100 : 0;
 
   return {
     rtt,
@@ -194,10 +192,12 @@ export class StatsMonitorService {
           const timeDelta = (now - previousTime) / 1000; // seconds
           if (timeDelta > 0) {
             incomingBandwidth =
-              (extracted.incomingBandwidth - previousExtracted.incomingBandwidth) /
+              (extracted.incomingBandwidth -
+                previousExtracted.incomingBandwidth) /
               timeDelta;
             outgoingBandwidth =
-              (extracted.outgoingBandwidth - previousExtracted.outgoingBandwidth) /
+              (extracted.outgoingBandwidth -
+                previousExtracted.outgoingBandwidth) /
               timeDelta;
           }
         }
